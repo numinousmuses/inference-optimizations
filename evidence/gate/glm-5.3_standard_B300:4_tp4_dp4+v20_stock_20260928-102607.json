@@ -1,0 +1,205 @@
+{
+ "cell": "glm-5.3/standard",
+ "arm": "tp4_dp4+v20_stock",
+ "delta": {
+  "flags_remove": [
+   "--tp",
+   "--dp"
+  ],
+  "flags_add": [
+   "--tp",
+   "4",
+   "--dp",
+   "4"
+  ],
+  "dp_size": 4,
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "B300:4",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "bb63bb89e3874dd5",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--enable-dp-attention",
+  "--enable-dp-attention-local-control-broadcast",
+  "--enable-dp-lm-head",
+  "--quantization",
+  "modelopt_fp4",
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--chunked-prefill-size",
+  "16384",
+  "--enable-prefill-delayer",
+  "--mem-fraction-static",
+  "0.90",
+  "--cuda-graph-max-bs-decode",
+  "48",
+  "--max-running-requests",
+  "512",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--reasoning-parser",
+  "glm45",
+  "--tool-call-parser",
+  "glm47",
+  "--num-continuous-decode-steps",
+  "8",
+  "--tp",
+  "4",
+  "--dp",
+  "4"
+ ],
+ "ladder": [
+  32,
+  48
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_t8_300.json",
+ "started": "2026-09-28T09:39:18Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 32,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 50.63,
+   "warm_agg_out_tok_s": 721.2,
+   "steady_agg_out_tok_s": 962.7,
+   "ttft_p90_s": 2.54,
+   "ttft_p99_s": 3.56,
+   "ttft_max_s": 3.89,
+   "turn_wall_p50_s": 5.57,
+   "turn_wall_p90_s": 12.19,
+   "turn_wall_p99_s": 17.34,
+   "tail_last10pct_s": 15.8,
+   "warm_session_rate_sum": 1143.3,
+   "warm_ttft_p50_s": 1.19,
+   "hit_rate": 0.962,
+   "mean_prompt_tokens": 92317,
+   "mean_out_tokens": 235.2,
+   "accept_len": 3.05
+  },
+  {
+   "repeat": 0,
+   "sessions": 48,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 35.78,
+   "warm_agg_out_tok_s": 913.9,
+   "steady_agg_out_tok_s": 1158.6,
+   "ttft_p90_s": 3.02,
+   "ttft_p99_s": 4.6,
+   "ttft_max_s": 5.73,
+   "turn_wall_p50_s": 7.05,
+   "turn_wall_p90_s": 15.49,
+   "turn_wall_p99_s": 22.73,
+   "tail_last10pct_s": 17.0,
+   "warm_session_rate_sum": 1353.9,
+   "warm_ttft_p50_s": 1.27,
+   "hit_rate": 0.9618,
+   "mean_prompt_tokens": 93689,
+   "mean_out_tokens": 236.5,
+   "accept_len": 3.15
+  },
+  {
+   "repeat": 1,
+   "sessions": 32,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 49.82,
+   "warm_agg_out_tok_s": 743.6,
+   "steady_agg_out_tok_s": 974.0,
+   "ttft_p90_s": 3.01,
+   "ttft_p99_s": 4.74,
+   "ttft_max_s": 4.87,
+   "turn_wall_p50_s": 5.63,
+   "turn_wall_p90_s": 11.25,
+   "turn_wall_p99_s": 15.68,
+   "tail_last10pct_s": 15.5,
+   "warm_session_rate_sum": 1137.3,
+   "warm_ttft_p50_s": 1.25,
+   "hit_rate": 0.962,
+   "mean_prompt_tokens": 92317,
+   "mean_out_tokens": 235.5,
+   "accept_len": 3.04
+  },
+  {
+   "repeat": 1,
+   "sessions": 48,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 38.04,
+   "warm_agg_out_tok_s": 880.4,
+   "steady_agg_out_tok_s": 1188.9,
+   "ttft_p90_s": 2.71,
+   "ttft_p99_s": 5.09,
+   "ttft_max_s": 5.55,
+   "turn_wall_p50_s": 6.76,
+   "turn_wall_p90_s": 15.25,
+   "turn_wall_p99_s": 21.76,
+   "tail_last10pct_s": 22.7,
+   "warm_session_rate_sum": 1403.2,
+   "warm_ttft_p50_s": 1.22,
+   "hit_rate": 0.9619,
+   "mean_prompt_tokens": 93689,
+   "mean_out_tokens": 236.4,
+   "accept_len": 2.99
+  }
+ ],
+ "booted": true,
+ "boot_min": 15.1,
+ "kv_pool_tokens": [
+  2319168
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-fb6314fd-bd44-60dc-77a7-49e5e5024a06",
+   "GPU-e3d048c0-7314-fedd-71a3-700ba9a91a46",
+   "GPU-2cdc3fda-35eb-7643-d7b5-1c37dcfe9542",
+   "GPU-b02f8d92-8cc7-5015-5d31-b6528fb95a90"
+  ]
+ },
+ "sessions_dropped_oversize": 9,
+ "dp_peak_running": {
+  "0": 11,
+  "1": 11,
+  "2": 12,
+  "3": 13
+ },
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 250,
+  "accept_len_mean": 3.096,
+  "accept_len_p10": 2.66,
+  "accept_len_p50": 3.12,
+  "accept_len_p90": 3.5,
+  "accept_rate_mean": 0.698
+ },
+ "probes": {
+  "score": "5/6",
+  "per_probe": [
+   1,
+   1,
+   0,
+   1,
+   1,
+   1
+  ],
+  "misses": [
+   {
+    "probe": 2,
+    "expect": "The foundry poured 950 tonnes of grey iron in the second quarter and 484 tonnes in the third.",
+    "said": "The user wants me to repeat sentence 676 exactly, then state every number in it as a comma-separated list.\n\nSentence 676: \"Route 381 carries about 301 thousand vehicles a day; the bypass carries 431 thousand.\"\n\nWait, let me check. Sentence 676 is: \"Route 381 carries about 301 thousand vehicles a day"
+   }
+  ]
+ }
+}

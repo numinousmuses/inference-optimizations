@@ -1,0 +1,93 @@
+From 7203e4e5a27d7bca586bf3dae29478c30ab69cb5 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Mon, 21 Sep 2026 22:30:56 +0000
+Subject: [PATCH] decode burst: never hold a request mid chunked prefill; under
+ DP attention decide from the synced view and advance the streak from the
+ batch kind actually run
+
+---
+ python/sglang/srt/managers/decode_burst.py |  9 ++++++++-
+ python/sglang/srt/managers/scheduler.py    | 11 ++++++++---
+ test/numinous/test_decode_burst.py         |  5 +++++
+ 3 files changed, 21 insertions(+), 4 deletions(-)
+
+diff --git a/python/sglang/srt/managers/decode_burst.py b/python/sglang/srt/managers/decode_burst.py
+index d6e9b24aa..10203a404 100644
+--- a/python/sglang/srt/managers/decode_burst.py
++++ b/python/sglang/srt/managers/decode_burst.py
+@@ -10,15 +10,22 @@ def hold_prefill(
+     last_batch_was_extend: bool | None,
+     running_nonempty: bool,
+     running_prefill_only: bool,
++    chunked_prefill_pending: bool = False,
+ ) -> bool:
+     """True when this scheduler pass should skip prefill admission and let decode take the step.
+ 
+     burst <= 1 disables the rule. The hold applies only after a non-extend (decode) pass, while fewer than
+     `burst` consecutive decode steps have run, and only when there are running decode requests; an idle
+-    scheduler admits prefill immediately so first-token latency on an idle node is unchanged.
++    scheduler admits prefill immediately so first-token latency on an idle node is unchanged. A request that is
++    part-way through a chunked prefill is never held: its next chunk must be scheduled or it never finishes.
++
++    Under DP attention every rank must make the same decision, so callers pass running_nonempty=True there and
++    derive last_batch_was_extend and streak from the synced batch (see next_streak_from_mode).
+     """
+     if burst <= 1 or last_batch_was_extend is None or last_batch_was_extend:
+         return False
++    if chunked_prefill_pending:
++        return False
+     if not running_nonempty or running_prefill_only:
+         return False
+     return streak < burst
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index d81912c01..68483dcde 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -3113,8 +3113,10 @@ class Scheduler(
+             self.decode_burst,
+             self.decode_streak,
+             (last_batch.forward_mode.is_extend() if last_batch is not None else None),
+-            not running_batch.is_empty(),
+-            bool(running_batch.is_prefill_only),
++            # under DP attention the decision must match on every rank: use the synced view only
++            True if self.require_mlp_sync else not running_batch.is_empty(),
++            False if self.require_mlp_sync else bool(running_batch.is_prefill_only),
++            chunked_prefill_pending=self.chunked_req is not None,
+         ):
+             # Numinous: hold prefill for this pass; decode keeps the step.
+             new_batch = None
+@@ -3122,7 +3124,6 @@ class Scheduler(
+             prefill_plan = self.get_new_batch_prefill(running_batch)
+             new_batch = prefill_plan.batch_to_run
+             running_batch = prefill_plan.running_batch
+-        self.decode_streak = next_streak(self.decode_burst, self.decode_streak, new_batch is not None)
+ 
+         need_mlp_sync = self.require_mlp_sync
+         if (
+@@ -3152,6 +3153,10 @@ class Scheduler(
+         ret = self.dp_attn_adapter.maybe_prepare_mlp_sync_batch(
+             ret, need_sync=need_mlp_sync
+         )
++        # Numinous: the streak follows the batch kind actually run, which after the DP sync is the same on all ranks
++        self.decode_streak = next_streak(
++            self.decode_burst, self.decode_streak, prefill_admitted=(ret is not None and ret.forward_mode.is_extend())
++        )
+ 
+         # Handle ngram embedding
+         ret = self.ngram_embedding_manager.prepare_for_forward(
+diff --git a/test/numinous/test_decode_burst.py b/test/numinous/test_decode_burst.py
+index 55a6b890a..4f2ddcf76 100644
+--- a/test/numinous/test_decode_burst.py
++++ b/test/numinous/test_decode_burst.py
+@@ -31,3 +31,8 @@ def test_streak_resets_on_prefill():
+     assert next_streak(4, 3, prefill_admitted=True) == 0
+     assert next_streak(4, 3, prefill_admitted=False) == 4
+     assert next_streak(1, 5, prefill_admitted=False) == 0
++
++
++def test_chunked_prefill_in_flight_is_never_held():
++    assert hold_prefill(8, 0, False, True, False, chunked_prefill_pending=True) is False
++    assert hold_prefill(8, 0, False, True, False, chunked_prefill_pending=False) is True
+-- 
+2.50.1 (Apple Git-155)
+

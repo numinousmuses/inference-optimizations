@@ -1,0 +1,108 @@
+{
+ "cell": "qwen3.6-35b-a3b/fast",
+ "arm": "v20_stock_q36",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [],
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--moe-runner-backend",
+   "flashinfer_cutedsl",
+   "--moe-a2a-backend",
+   "none"
+  ],
+  "env": {
+   "SGLANG_FLASHINFER_CUTEDSL_NVFP4_W4A16": "1"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "feece2c633aff59f",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--mem-fraction-static",
+  "0.85",
+  "--attention-backend",
+  "flashinfer",
+  "--chunked-prefill-size",
+  "2048",
+  "--reasoning-parser",
+  "qwen3",
+  "--tool-call-parser",
+  "qwen3_coder",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--enable-linear-replayssm-spec",
+  "--max-mamba-cache-size",
+  "512",
+  "--max-running-requests",
+  "96",
+  "--moe-runner-backend",
+  "flashinfer_cutedsl",
+  "--moe-a2a-backend",
+  "none"
+ ],
+ "ladder": [
+  4,
+  8
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-28T04:55:41Z",
+ "runs": [],
+ "booted": false,
+ "boot_min": 0.8,
+ "kv_pool_tokens": null,
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-5003b3ba-c9ee-d436-be0d-0c70bcba090e"
+  ]
+ },
+ "root_cause": [
+  "...",
+  "Traceback (most recent call last):",
+  "  File \"<frozen runpy>\", line 198, in _run_module_as_main",
+  "  File \"<frozen runpy>\", line 88, in _run_code",
+  "  File \"/sgl-workspace/sglang/python/sglang/launch_server.py\", line 84, in <module>",
+  "    run_server(server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/launch_server.py\", line 29, in run_server",
+  "    server_args.resolve_once()",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/server_args.py\", line 281, in resolve_once",
+  "    run_resolution_pipeline(self)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/arg_groups/pipeline.py\", line 311, in run_resolution_pipeline",
+  "    run_hook(handle_moe_kernel_config, server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/arg_groups/resolution_hooks.py\", line 198, in run_hook",
+  "    step(server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/arg_groups/moe_hook.py\", line 61, in handle_moe_kernel_config",
+  "    view.quantization in [\"modelopt_fp4\", \"modelopt_mixed\", \"nvfp4_online\"]",
+  "AssertionError: Invalid quantization 'None'. ",
+  "FlashInfer CuteDSL MOE currently supports only: 'modelopt_fp4', 'modelopt_mixed' (with NVFP4 MoE layers), 'nvfp4_online', or hybrid NVFP4 models.",
+  "... error lines:",
+  "AssertionError: Invalid quantization 'None'. ",
+  "... tail:",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/arg_groups/pipeline.py\", line 311, in run_resolution_pipeline",
+  "    run_hook(handle_moe_kernel_config, server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/arg_groups/resolution_hooks.py\", line 198, in run_hook",
+  "    step(server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/arg_groups/moe_hook.py\", line 61, in handle_moe_kernel_config",
+  "    view.quantization in [\"modelopt_fp4\", \"modelopt_mixed\", \"nvfp4_online\"]",
+  "AssertionError: Invalid quantization 'None'. ",
+  "FlashInfer CuteDSL MOE currently supports only: 'modelopt_fp4', 'modelopt_mixed' (with NVFP4 MoE layers), 'nvfp4_online', or hybrid NVFP4 models."
+ ]
+}

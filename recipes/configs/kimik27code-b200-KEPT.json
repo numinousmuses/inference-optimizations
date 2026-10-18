@@ -1,0 +1,31 @@
+{
+ "model": "moonshotai/Kimi-K2.7-Code (INT4)",
+ "silicon": "8x B200",
+ "status": "KEPT 2026-09-21; production (serving.ts K27_E3(false, 128), admission 64). DP attention removed.",
+ "lanes": {
+  "std": {
+   "flags_delta": "EAGLE3 (novita mla draft) + tokenspeed_mla attention + dp; mrr 192",
+   "cell": "8k/b128 9,047@70.7",
+   "evidence": "k27code_eagle.json:e3_ts_dp"
+  },
+  "fast": {
+   "flags_delta": "same recipe, admission cap 16",
+   "cell": "c=16 2,466@154",
+   "evidence": "k27code_eagle2.json:e3_fast"
+  },
+  "std_or_shape": {
+   "flags_delta": "EAGLE3 + tokenspeed_mla, NO dp-attention, mrr 128",
+   "cell": "c=32: 2,128@89.4",
+   "evidence": "numinous-inference/research/gpu-evidence/pool_program/k27_nodp_*.json"
+  }
+ },
+ "rules": [
+  "K2.7 uses EAGLE3, not DSPARK (DSPARK gate relaunched with boot fix, EAGLE3 won).",
+  "tokenspeed_mla doubles prefill vs default MLA on Blackwell.",
+  "Aggregate optimum at b128; acceptance degrades past it.",
+  "32k row is 19 tok/s/user, under the 30 floor: set capacity from the worst context sold.",
+  "DP attention (dp 8) is a short-prompt artefact: at 31k prompts it splits the radix cache across ranks (30% hits) and the MLA backend's fa2 fallback starves prefill (267 tok/s, 9.7/user). Off: 8-10x.",
+  "trtllm_mla is 10-15% slower than tokenspeed_mla at 31-64k warm.",
+  "H200: flashinfer + EAGLE3 crashes in ragged prefill (q.shape vs qo_indptr); fa3 works at 23 tok/s/user. H200 lane closed."
+ ]
+}

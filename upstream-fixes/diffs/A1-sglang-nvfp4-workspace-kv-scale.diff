@@ -1,0 +1,38 @@
+--- a/python/sglang/srt/layers/attention/flashinfer_backend.py	2026-09-29 06:30:57.700331225 +0000
++++ b/python/sglang/srt/layers/attention/flashinfer_backend.py	2026-09-29 06:31:19.218783795 +0000
+@@ -1385,8 +1385,9 @@
+                 ),
+                 logits_soft_cap=logits_soft_cap,
+                 # Must use _float to avoid device-to-host copy that breaks cuda graph capture.
+-                k_scale=layer.k_scale_float,
+-                v_scale=layer.v_scale_float,
++                # The FP4 dequant workspace already holds real-scale values.
++                k_scale=None if self.prefill_uses_dequant_workspace else layer.k_scale_float,
++                v_scale=None if self.prefill_uses_dequant_workspace else layer.v_scale_float,
+             )
+         else:
+             # If `k`/`v` are not explicitly provided, fall back to the KV cache stored in
+@@ -1447,8 +1448,9 @@
+                     window_left=swa_window_left,
+                     logits_soft_cap=logits_soft_cap,
+                     # Must use _float to avoid device-to-host copy that breaks cuda graph capture.
+-                    k_scale=layer.k_scale_float,
+-                    v_scale=layer.v_scale_float,
++                    # The FP4 dequant workspace already holds real-scale values.
++                    k_scale=None if self.prefill_uses_dequant_workspace else layer.k_scale_float,
++                    v_scale=None if self.prefill_uses_dequant_workspace else layer.v_scale_float,
+                 )
+ 
+                 o, _ = _safe_merge_state(o1, s1, o2, s2)
+@@ -1517,8 +1519,9 @@
+             sm_scale=layer.scaling,
+             logits_soft_cap=layer.logit_cap,
+             # Must use _float to avoid device-to-host copy that breaks cuda graph capture.
+-            k_scale=layer.k_scale_float,
+-            v_scale=layer.v_scale_float,
++            # The FP4 dequant workspace already holds real-scale values.
++            k_scale=None if self.decode_uses_dequant_workspace else layer.k_scale_float,
++            v_scale=None if self.decode_uses_dequant_workspace else layer.v_scale_float,
+         )
+ 
+         return o.view(-1, layer.tp_q_head_num * layer.head_dim)

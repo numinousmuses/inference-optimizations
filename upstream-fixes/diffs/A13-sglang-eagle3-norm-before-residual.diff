@@ -1,0 +1,27 @@
+--- a/python/sglang/srt/models/llama_eagle3.py	2026-09-29 07:03:21.716669830 +0000
++++ b/python/sglang/srt/models/llama_eagle3.py	2026-09-29 07:06:28.448858232 +0000
+@@ -76,6 +76,9 @@
+         )
+ 
+         self.hidden_norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
++        # speculators / vLLM drafts trained with norm_before_residual take the
++        # input layer's residual after hidden_norm.
++        self.norm_before_residual = bool(getattr(config, "norm_before_residual", False))
+ 
+     def forward(
+         self,
+@@ -88,8 +91,12 @@
+ 
+         if self.is_input_layer:
+             # Input layer consumes target hidden states; no carried residual to fuse.
+-            residual = hidden_states
+-            hidden_states = self.hidden_norm(hidden_states)
++            if self.norm_before_residual:
++                hidden_states = self.hidden_norm(hidden_states)
++                residual = hidden_states
++            else:
++                residual = hidden_states
++                hidden_states = self.hidden_norm(hidden_states)
+             embeds = self.input_layernorm(embeds)
+             hidden_states = torch.cat([embeds, hidden_states], dim=-1)
+         else:

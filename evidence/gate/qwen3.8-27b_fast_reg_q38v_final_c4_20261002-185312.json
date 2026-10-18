@@ -1,0 +1,677 @@
+{
+ "cell": "qwen3.8-27b/fast",
+ "arm": "q38v_final_c4",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "overlay": {
+   "operations/patches/q38_radix_stats_hooks.py": "!run",
+   "operations/patches/q38_fp8_prefill_hooks.py": "!run"
+  },
+  "env": {
+   "NUMINOUS_RADIX_STATS": "1",
+   "NUMINOUS_FP8_PREFILL": "1"
+  },
+  "flags_remove": [
+   "--fp4-gemm-backend",
+   "--max-mamba-cache-size",
+   "--max-running-requests",
+   "--speculative-num-draft-tokens",
+   "--speculative-algorithm",
+   "--speculative-draft-model-path",
+   "--speculative-num-steps",
+   "--speculative-eagle-topk",
+   "--enable-linear-replayssm-spec"
+  ],
+  "flags_add": [
+   "--fp4-gemm-backend",
+   "flashinfer_cudnn",
+   "--max-mamba-cache-size",
+   "160",
+   "--max-running-requests",
+   "20",
+   "--speculative-num-draft-tokens",
+   "8",
+   "--speculative-algorithm",
+   "DFLASH",
+   "--speculative-draft-model-path",
+   "/cache/tcclaviger__Qwen3.8-27B-DFlash2-FP8",
+   "--enable-hierarchical-cache",
+   "--hicache-ratio",
+   "2",
+   "--hicache-write-policy",
+   "write_through"
+  ],
+  "_ladder": [
+   4
+  ],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "cda846c6087d3a33",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--mem-fraction-static",
+  "0.85",
+  "--attention-backend",
+  "flashinfer",
+  "--chunked-prefill-size",
+  "8192",
+  "--mamba-ssm-dtype",
+  "bfloat16",
+  "--reasoning-parser",
+  "qwen3",
+  "--tool-call-parser",
+  "qwen3_coder",
+  "--fp4-gemm-backend",
+  "flashinfer_cudnn",
+  "--max-mamba-cache-size",
+  "160",
+  "--max-running-requests",
+  "20",
+  "--speculative-num-draft-tokens",
+  "8",
+  "--speculative-algorithm",
+  "DFLASH",
+  "--speculative-draft-model-path",
+  "/cache/tcclaviger__Qwen3.8-27B-DFlash2-FP8",
+  "--enable-hierarchical-cache",
+  "--hicache-ratio",
+  "2",
+  "--hicache-write-policy",
+  "write_through"
+ ],
+ "ladder": [
+  4
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_qwen38_60k.json",
+ "started": "2026-10-02T18:45:14Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 4,
+   "stagger_s": 0.0,
+   "flush_ok": true,
+   "warm_per_user_tok_s": 48.59,
+   "warm_agg_out_tok_s": 120.2,
+   "steady_agg_out_tok_s": 159.9,
+   "ttft_p90_s": 1.95,
+   "ttft_p99_s": 1.95,
+   "ttft_max_s": 1.95,
+   "turn_wall_p50_s": 6.73,
+   "turn_wall_p90_s": 11.01,
+   "turn_wall_p99_s": 11.01,
+   "tail_last10pct_s": 1.3,
+   "hit_by_turn": [
+    0.0,
+    0.9053,
+    0.9216
+   ],
+   "warm_low_hit_requests": 0,
+   "warm_requests": 8,
+   "warm_session_rate_sum": 175.2,
+   "warm_ttft_p50_s": 1.09,
+   "hit_rate": 0.9138,
+   "mean_prompt_tokens": 68483,
+   "mean_out_tokens": 286.9,
+   "accept_len": 3.17,
+   "radix": {
+    "evict_calls": 0,
+    "evicted_full_tokens": 0,
+    "evicted_mamba_states": 0,
+    "flushes": 0,
+    "full_available_now": 503550,
+    "full_evictable_now": 214166,
+    "kv_absent_tokens": 298036,
+    "kv_hit_tokens": 523750,
+    "mamba_available_now": 106,
+    "mamba_evictable_now": 50,
+    "mamba_gap_requests": 0,
+    "mamba_gap_tokens": 248,
+    "match_calls": 75,
+    "prompt_tokens": 821786,
+    "requests": 12,
+    "usable_tokens": 523502,
+    "zero_hit_requests": 4,
+    "usable_share": 0.637,
+    "mamba_gap_share": 0.0003,
+    "kv_absent_share": 0.3627
+   }
+  }
+ ],
+ "booted": true,
+ "boot_min": 4.5,
+ "kv_pool_tokens": [
+  803896
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-5691d905-ce40-5aad-2071-3f7afe41884d"
+  ]
+ },
+ "sessions_dropped_oversize": 0,
+ "profile": {
+  "sessions": 4,
+  "steps": 60,
+  "bench": {
+   "warm_per_user_tok_s": 46.94,
+   "warm_agg_out_tok_s": 134.6,
+   "steady_agg_out_tok_s": 162.4,
+   "ttft_p90_s": 1.44,
+   "ttft_p99_s": 1.44,
+   "ttft_max_s": 1.44,
+   "turn_wall_p50_s": 12.26,
+   "turn_wall_p90_s": 15.35,
+   "turn_wall_p99_s": 15.35,
+   "tail_last10pct_s": 0.2,
+   "hit_by_turn": [
+    0.9993,
+    0.932,
+    0.9125
+   ],
+   "warm_low_hit_requests": 0,
+   "warm_requests": 8,
+   "warm_session_rate_sum": 155.7,
+   "warm_ttft_p50_s": 0.87,
+   "hit_rate": 0.9218,
+   "mean_prompt_tokens": 56109,
+   "mean_out_tokens": 356.1
+  },
+  "summary": {
+   "trace_files": 1,
+   "ranks": [
+    {
+     "file": "1790967113.5101054-TP-0.trace.json.gz",
+     "kernels": 117462,
+     "busy_ms": 2759.62,
+     "span_ms": 2791.31,
+     "busy_frac": 0.989,
+     "family_ms": {
+      "gemm": 1564.0,
+      "attention": 806.2,
+      "linear_attn": 180.3,
+      "norm_act": 103.6,
+      "memory": 64.2,
+      "other": 30.9,
+      "sampling": 10.5
+     },
+     "compute_ms": 2759.6,
+     "collective_call_ms": {
+      "n": 0,
+      "p10": null,
+      "p50": null,
+      "p90": null,
+      "max": null
+     }
+    }
+   ],
+   "total_gpu_ms": 2759.62,
+   "compute_ms_by_rank": [
+    2759.6
+   ],
+   "compute_imbalance": 1.0,
+   "collective_split": {},
+   "families": {
+    "gemm": 0.5667,
+    "attention": 0.2921,
+    "linear_attn": 0.0653,
+    "norm_act": 0.0375,
+    "memory": 0.0233,
+    "other": 0.0112,
+    "sampling": 0.0038
+   },
+   "top": [
+    {
+     "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS1_10collective13CollectiveMmaINS1_31MainloopSm120TmaWarpSpecializedILi2ELi2ENS5_IJNS4_1CILi1EEESB_S",
+     "family": "gemm",
+     "ms": 797.6,
+     "share": 0.289,
+     "count": 8758
+    },
+    {
+     "name": "cutlass3x_sm120_bstensorop_s16864gemm_block_scaled_ue4m3xe2m1_ue4m3xe2m1_f32_bf16_bf16_128x128x256_1x1x1_0_tnn_align32_o_vs16_bias_bf16_relu_stream_k",
+     "family": "gemm",
+     "ms": 604.81,
+     "share": 0.2192,
+     "count": 6720
+    },
+    {
+     "name": "_fp8_prefill_paged_fwd",
+     "family": "attention",
+     "ms": 387.01,
+     "share": 0.1402,
+     "count": 16
+    },
+    {
+     "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, 64u, 1u, 4u, 16u, 16u, 4u, 1u, (flashinfer::PosEncodingMode)0, __nv_bfloat16, ",
+     "family": "attention",
+     "ms": 330.81,
+     "share": 0.1199,
+     "count": 944
+    },
+    {
+     "name": "fused_sigmoid_gating_delta_rule_update_kernel",
+     "family": "linear_attn",
+     "ms": 91.41,
+     "share": 0.0331,
+     "count": 2832
+    },
+    {
+     "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS1_10collective13CollectiveMmaINS1_47MainloopSm120TmaWarpSpecializedBlockwiseScalingILi4ELi2ENS5_IJN",
+     "family": "gemm",
+     "ms": 78.54,
+     "share": 0.0285,
+     "count": 1475
+    },
+    {
+     "name": "_layer_norm_fwd_1pass_kernel",
+     "family": "norm_act",
+     "ms": 72.6,
+     "share": 0.0263,
+     "count": 2880
+    },
+    {
+     "name": "kernel_cutlass_kernel_flashinfernormkernelsfused_add_rmsnormFusedAddRMSNormKernel_object_at__tensorptrbf16gmemalign128oi64512051201_tensorptrbf16gmemalign128oi64512051201_tensorptr",
+     "family": "attention",
+     "ms": 34.51,
+     "share": 0.0125,
+     "count": 8270
+    },
+    {
+     "name": "void sglang::act_and_mul_kernel<__nv_bfloat16, (sglang::ActivationKind)0, true, false, false, false>(sglang::ActivationParams)",
+     "family": "norm_act",
+     "ms": 29.13,
+     "share": 0.0106,
+     "count": 4135
+    },
+    {
+     "name": "_fused_mamba_state_scatter_with_mask_kernel",
+     "family": "linear_attn",
+     "ms": 28.65,
+     "share": 0.0104,
+     "count": 118
+    },
+    {
+     "name": "_causal_conv1d_update_kernel",
+     "family": "linear_attn",
+     "ms": 26.53,
+     "share": 0.0096,
+     "count": 2832
+    },
+    {
+     "name": "void sglang::per_token_quant_fp8_cta_kernel<__nv_bfloat16, 8>(__nv_bfloat16 const*, __nv_fp8_e4m3*, float*, unsigned int)",
+     "family": "gemm",
+     "ms": 20.19,
+     "share": 0.0073,
+     "count": 8615
+    },
+    {
+     "name": "Memcpy DtoH (Device -> Pinned)",
+     "family": "memory",
+     "ms": 19.91,
+     "share": 0.0072,
+     "count": 17899
+    },
+    {
+     "name": "void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, true, false, false, false>(cublasLt:",
+     "family": "gemm",
+     "ms": 16.33,
+     "share": 0.0059,
+     "count": 2832
+    },
+    {
+     "name": "void tensorrt_llm::kernels::quantize_with_block_size<(tensorrt_llm::BlockScaleQuantizationType)0, __nv_bfloat16, 16, false, false, false, false, std::integral_constant<bool, false>",
+     "family": "attention",
+     "ms": 15.81,
+     "share": 0.0057,
+     "count": 6608
+    },
+    {
+     "name": "void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x64_64x4_tn_align8>(cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x64_64x4_tn_align8::Params)",
+     "family": "gemm",
+     "ms": 13.06,
+     "share": 0.0047,
+     "count": 59
+    },
+    {
+     "name": "void cutlass::Kernel2<cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8>(cutlass_80_wmma_tensorop_s161616gemm_bf16_32x32_64x1_tn_align8::Params)",
+     "family": "gemm",
+     "ms": 10.76,
+     "share": 0.0039,
+     "count": 2832
+    },
+    {
+     "name": "chunk_gated_delta_rule_fwd_kernel_h_blockdim64",
+     "family": "linear_attn",
+     "ms": 9.23,
+     "share": 0.0033,
+     "count": 48
+    },
+    {
+     "name": "void tensorrt_llm::kernels::quantize_with_block_size_tma<(tensorrt_llm::BlockScaleQuantizationType)0, __nv_bfloat16, 16, false, false, false, false, std::integral_constant<bool, fa",
+     "family": "attention",
+     "ms": 8.4,
+     "share": 0.003,
+     "count": 112
+    },
+    {
+     "name": "fused_qkvzba_split_reshape_cat_contiguous_kernel",
+     "family": "memory",
+     "ms": 7.98,
+     "share": 0.0029,
+     "count": 2832
+    },
+    {
+     "name": "chunk_fwd_kernel_o",
+     "family": "linear_attn",
+     "ms": 7.98,
+     "share": 0.0029,
+     "count": 48
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lamb",
+     "family": "memory",
+     "ms": 7.53,
+     "share": 0.0027,
+     "count": 857
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl<at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::DivFunct",
+     "family": "other",
+     "ms": 6.99,
+     "share": 0.0025,
+     "count": 1920
+    },
+    {
+     "name": "void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x64_64x3_tn_align8>(cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x64_64x3_tn_align8::Params)",
+     "family": "gemm",
+     "ms": 6.91,
+     "share": 0.0025,
+     "count": 590
+    },
+    {
+     "name": "Memset (Device)",
+     "family": "memory",
+     "ms": 6.83,
+     "share": 0.0025,
+     "count": 6732
+    },
+    {
+     "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, 128u, 2u, 2u, 8u, 8u, 4u, 1u, (flashinfer::PosEncodingMode)0, __nv_bfloat16, _",
+     "family": "attention",
+     "ms": 6.56,
+     "share": 0.0024,
+     "count": 295
+    },
+    {
+     "name": "create_flashinfer_kv_indices_triton",
+     "family": "attention",
+     "ms": 6.23,
+     "share": 0.0023,
+     "count": 178
+    },
+    {
+     "name": "_fused_qk_rmsnorm_rope_gate_kernel",
+     "family": "attention",
+     "ms": 5.57,
+     "share": 0.002,
+     "count": 960
+    },
+    {
+     "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<8u, 32u, 4u, 4u, __nv_bfloat16, __nv_bfloat16, int>(__nv_bfloat16*, float*, int*, __nv_bfloat16*, float*, unsigned int, u",
+     "family": "attention",
+     "ms": 5.49,
+     "share": 0.002,
+     "count": 944
+    },
+    {
+     "name": "speculative_sampling_classic_kernel",
+     "family": "sampling",
+     "ms": 5.44,
+     "share": 0.002,
+     "count": 59
+    },
+    {
+     "name": "_causal_conv1d_fwd_kernel",
+     "family": "linear_attn",
+     "ms": 5.13,
+     "share": 0.0019,
+     "count": 48
+    },
+    {
+     "name": "recompute_w_u_fwd_kernel",
+     "family": "linear_attn",
+     "ms": 5.03,
+     "share": 0.0018,
+     "count": 48
+    },
+    {
+     "name": "void sglang::per_token_quant_fp8_warp_kernel<__nv_bfloat16, 8>(__nv_bfloat16 const*, __nv_fp8_e4m3*, float*, unsigned int, unsigned int)",
+     "family": "gemm",
+     "ms": 4.5,
+     "share": 0.0016,
+     "count": 144
+    },
+    {
+     "name": "void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lambda()#7}::operator()() const::{lamb",
+     "family": "memory",
+     "ms": 4.44,
+     "share": 0.0016,
+     "count": 151
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::ConvertToFloat8E4M3fnOp<c10::BFloat16> >(at::TensorIteratorBase&, at::native::ConvertToFl",
+     "family": "other",
+     "ms": 3.64,
+     "share": 0.0013,
+     "count": 1850
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<float, float, float, at::native::binary_internal::DivFunctor<float> > >(at:",
+     "family": "other",
+     "ms": 3.31,
+     "share": 0.0012,
+     "count": 76
+    },
+    {
+     "name": "sglang::transfer_mamba_backup_kernel(sglang::MambaTransferParams)",
+     "family": "linear_attn",
+     "ms": 3.28,
+     "share": 0.0012,
+     "count": 4
+    },
+    {
+     "name": "Memcpy DtoD (Device -> Device)",
+     "family": "memory",
+     "ms": 3.03,
+     "share": 0.0011,
+     "count": 1274
+    },
+    {
+     "name": "chunk_gated_delta_rule_fwd_kkt_solve_kernel",
+     "family": "linear_attn",
+     "ms": 2.81,
+     "share": 0.001,
+     "count": 48
+    },
+    {
+     "name": "void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x128_32x3_tn_align8>(cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x128_32x3_tn_align8::Params)",
+     "family": "gemm",
+     "ms": 2.71,
+     "share": 0.001,
+     "count": 1
+    },
+    {
+     "name": "_fused_conv_window_scatter_multi_kernel",
+     "family": "memory",
+     "ms": 2.55,
+     "share": 0.0009,
+     "count": 59
+    },
+    {
+     "name": "_fused_sigmoid_mul_kernel",
+     "family": "other",
+     "ms": 2.35,
+     "share": 0.0009,
+     "count": 960
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::BFloat16>, std::array<char*, 1ul> >(int, at::native::FillFunctor<c10::BFloat16>, std::array<char*, 1u",
+     "family": "memory",
+     "ms": 2.23,
+     "share": 0.0008,
+     "count": 1400
+    },
+    {
+     "name": "void sglang::per_token_group_quant_flat_kernel<sglang::QuantTrait<__nv_bfloat16, __nv_fp8_e4m3, 128u, false, false, true, false>, true>(sglang::QuantKernelParams)",
+     "family": "gemm",
+     "ms": 2.03,
+     "share": 0.0007,
+     "count": 1480
+    },
+    {
+     "name": "void sglang::store_kvcache<1024l, 1024l, 2, true, long>(sglang::StoreKVCacheParams)",
+     "family": "other",
+     "ms": 1.98,
+     "share": 0.0007,
+     "count": 1260
+    },
+    {
+     "name": "void at::native::mbtopk::computeBlockDigitCounts<float, unsigned int, unsigned int, 2>(at::cuda::detail::TensorInfo<float const, unsigned int>, unsigned int, unsigned int*, unsigne",
+     "family": "sampling",
+     "ms": 1.95,
+     "share": 0.0007,
+     "count": 236
+    },
+    {
+     "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS1_10collective13CollectiveMmaINS1_47MainloopSm120TmaWarpSpecializedBlockwiseScalingILi2ELi2ENS5_IJN",
+     "family": "gemm",
+     "ms": 1.89,
+     "share": 0.0007,
+     "count": 5
+    },
+    {
+     "name": "l2norm_fwd_kernel",
+     "family": "norm_act",
+     "ms": 1.89,
+     "share": 0.0007,
+     "count": 96
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::AbsFunctor<float>, std::array<char*, 2ul> >(int, at::native::AbsFunctor<float>, std::array<char*, 2ul>)",
+     "family": "other",
+     "ms": 1.88,
+     "share": 0.0007,
+     "count": 16
+    },
+    {
+     "name": "void cutlass::Kernel2<cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_64x3_tn_align8>(cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_64x3_tn_align8::Params)",
+     "family": "gemm",
+     "ms": 1.75,
+     "share": 0.0006,
+     "count": 48
+    },
+    {
+     "name": "void flashinfer::sampling::RadixTopKKernel_Unified<1024u, 8u, false, true, (flashinfer::sampling::RadixTopKMode)0, __nv_bfloat16, int, flashinfer::sampling::DirectPageTableKernelPo",
+     "family": "attention",
+     "ms": 1.71,
+     "share": 0.0006,
+     "count": 59
+    },
+    {
+     "name": "triton_poi_fused_add_arange_bitwise_and_constant_pad_nd_ge_mul_select_slice_unsqueeze_view_0",
+     "family": "other",
+     "ms": 1.47,
+     "share": 0.0005,
+     "count": 1180
+    },
+    {
+     "name": "void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_kernel_impl<at::native::OpaqueType<8> >(at::TensorIteratorBase&, c10::ArrayRef<long",
+     "family": "memory",
+     "ms": 1.38,
+     "share": 0.0005,
+     "count": 123
+    },
+    {
+     "name": "void cublasLt::splitKreduce_kernel<32, 16, int, __nv_bfloat16, __nv_bfloat16, float, __nv_bfloat16, false, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, true, false, false, false>(c",
+     "family": "gemm",
+     "ms": 1.32,
+     "share": 0.0005,
+     "count": 756
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::ConvertToFloat8E4M3fnOp<c10::BFloat16>, std::array<char*, 2ul> >(int, at::native::ConvertToFloat8E4M3fnOp<c10::BFloat1",
+     "family": "other",
+     "ms": 1.29,
+     "share": 0.0005,
+     "count": 1260
+    },
+    {
+     "name": "void at::native::mbtopk::gatherTopK<float, unsigned int, 2>(at::cuda::detail::TensorInfo<float const, unsigned int>, unsigned int, unsigned int, bool, unsigned int, unsigned int, a",
+     "family": "sampling",
+     "ms": 1.25,
+     "share": 0.0005,
+     "count": 59
+    },
+    {
+     "name": "_ZN7cutlass13device_kernelINS_4gemm6kernel13GemmUniversalIN4cute5tupleIJiiiiEEENS1_10collective13CollectiveMmaINS1_31MainloopSm120TmaWarpSpecializedILi2ELi2ENS5_IJNS4_1CILi1EEESB_S",
+     "family": "gemm",
+     "ms": 1.22,
+     "share": 0.0004,
+     "count": 1
+    },
+    {
+     "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<8u, 16u, 8u, 4u, __nv_bfloat16, __nv_bfloat16, int>(__nv_bfloat16*, float*, int*, __nv_bfloat16*, float*, unsigned int, u",
+     "family": "attention",
+     "ms": 1.16,
+     "share": 0.0004,
+     "count": 295
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::ConvertToFloat8E4M3fnOp<float>, std::array<char*, 2ul> >(int, at::native::ConvertToFloat8E4M3fnOp<float>, std::array<c",
+     "family": "other",
+     "ms": 1.01,
+     "share": 0.0004,
+     "count": 16
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::AUnaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float> >, std::arra",
+     "family": "other",
+     "ms": 0.95,
+     "share": 0.0003,
+     "count": 944
+    }
+   ]
+  }
+ },
+ "numinous_log": [
+  "[2026-10-02 18:45:48] numinous radix stats: installed on UnifiedRadixCache",
+  "[2026-10-02 18:46:49] numinous fp8_prefill: active (layer 3, 8192 new tokens, pv_fp8=True)",
+  "Capturing batches (bs=20 avail_mem=9.42 GB):   0%|          | 0/14 [00:00<?, ?it/s][2026-10-02 18:47:26] numinous fp8_prefill: declined (mode TARGET_VERIFY); FlashInfer serves this case",
+  "Capturing batches (bs=20 avail_mem=8.94 GB):   0%|          | 0/14 [00:00<?, ?it/s][2026-10-02 18:48:43] numinous fp8_prefill: declined (not causal self-attention); FlashInfer serves this case",
+  "[2026-10-02 18:48:48] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 1, \"full_available_now\": 803896, \"full_evictable_now\": 0, \"kv_absent_tokens\": 0, \"kv_hit_tokens\": 0, \"mamba_available_now\": 160, \"mamba_evictable_now\": 0, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 0, \"match_calls\": 0, \"prompt_tokens\": 0, \"requests\": 0, \"usable_tokens\": 0, \"zero_hit_requests\": 0}",
+  "[2026-10-02 18:49:34] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 1, \"full_available_now\": 803752, \"full_evictable_now\": 0, \"kv_absent_tokens\": 121, \"kv_hit_tokens\": 0, \"mamba_available_now\": 156, \"mamba_evictable_now\": 0, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 0, \"match_calls\": 2, \"prompt_tokens\": 121, \"requests\": 1, \"usable_tokens\": 0, \"zero_hit_requests\": 1}",
+  "[2026-10-02 18:49:45] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 1, \"full_available_now\": 803815, \"full_evictable_now\": 64, \"kv_absent_tokens\": 121, \"kv_hit_tokens\": 0, \"mamba_available_now\": 156, \"mamba_evictable_now\": 1, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 0, \"match_calls\": 3, \"prompt_tokens\": 121, \"requests\": 2, \"usable_tokens\": 0, \"zero_hit_requests\": 2}",
+  "[2026-10-02 18:49:54] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 2, \"full_available_now\": 803832, \"full_evictable_now\": 64, \"kv_absent_tokens\": 121, \"kv_hit_tokens\": 0, \"mamba_available_now\": 159, \"mamba_evictable_now\": 1, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 0, \"match_calls\": 3, \"prompt_tokens\": 121, \"requests\": 2, \"usable_tokens\": 0, \"zero_hit_requests\": 2}",
+  "[2026-10-02 18:50:19] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 2, \"full_available_now\": 624250, \"full_evictable_now\": 0, \"kv_absent_tokens\": 37311, \"kv_hit_tokens\": 45, \"mamba_available_now\": 123, \"mamba_evictable_now\": 21, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 45, \"match_calls\": 44, \"prompt_tokens\": 37356, \"requests\": 3, \"usable_tokens\": 0, \"zero_hit_requests\": 3}",
+  "[2026-10-02 18:50:21] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 3, \"full_available_now\": 623859, \"full_evictable_now\": 180037, \"kv_absent_tokens\": 179116, \"kv_hit_tokens\": 1530, \"mamba_available_now\": 132, \"mamba_evictable_now\": 28, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 826, \"match_calls\": 44, \"prompt_tokens\": 180646, \"requests\": 6, \"usable_tokens\": 704, \"zero_hit_requests\": 5}",
+  "[2026-10-02 18:50:56] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 3, \"full_available_now\": 554277, \"full_evictable_now\": 0, \"kv_absent_tokens\": 238198, \"kv_hit_tokens\": 1575, \"mamba_available_now\": 114, \"mamba_evictable_now\": 30, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 871, \"match_calls\": 102, \"prompt_tokens\": 239773, \"requests\": 7, \"usable_tokens\": 704, \"zero_hit_requests\": 6}",
+  "[2026-10-02 18:50:59] numinous radix stats {\"evict_calls\": 0, \"evicted_full_tokens\": 0, \"evicted_mamba_states\": 0, \"flushes\": 3, \"full_available_now\": 544212, \"full_evictable_now\": 324, \"kv_absent_tokens\": 357899, \"kv_hit_tokens\": 1620, \"mamba_available_now\": 110, \"mamba_evictable_now\": 34, \"mamba_gap_requests\": 0, \"mamba_gap_tokens\": 916, \"match_calls\": 106, \"prompt_tokens\": 359519, \"requests\": 9, \"usable_tokens\": 704, \"zero_hit_requests\": 8}"
+ ],
+ "spec_acceptance": {
+  "samples": 23,
+  "accept_len_mean": 3.168,
+  "accept_len_p10": 2.77,
+  "accept_len_p50": 3.14,
+  "accept_len_p90": 3.71,
+  "accept_rate_mean": 0.31
+ }
+}

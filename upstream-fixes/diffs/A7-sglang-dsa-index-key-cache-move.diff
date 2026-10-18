@@ -1,0 +1,36 @@
+--- a/python/sglang/srt/mem_cache/index_key_cache.py	2026-09-29 07:03:21.387671260 +0000
++++ b/python/sglang/srt/mem_cache/index_key_cache.py	2026-09-29 07:05:34.736213361 +0000
+@@ -48,12 +48,30 @@
+     def move(self, tgt_loc: torch.Tensor, src_loc: torch.Tensor) -> None:
+         if tgt_loc.numel() == 0:
+             return
+-        tgt_loc_flat = tgt_loc.view(-1).long()
+-        src_loc_flat = src_loc.view(-1).long()
++        # ``tgt_loc``/``src_loc`` are token slots, but each buffer row is a page:
++        # [page_size * index_head_dim key bytes | page_size * scale bytes]
++        # (the AITER preshuffle layout interleaves them per token instead).
++        # Move each token's key and scale bytes inside its page.
++        pool = self.pool
++        page_size = pool.page_size
++        k_bytes = pool.index_head_dim
++        s_bytes = pool.index_head_dim // pool.quant_block_size * 4
++        tgt = tgt_loc.view(-1).long()
++        src = src_loc.view(-1).long()
++        tgt_page, tgt_off = tgt // page_size, tgt % page_size
++        src_page, src_off = src // page_size, src % page_size
+         for index_k in self.buffer:
+             if index_k.shape[0] == 0:
+                 continue
+-            index_k[tgt_loc_flat] = index_k[src_loc_flat]
++            if index_buf_accessor._use_aiter_preshuffle:
++                rows = index_k.view(-1, k_bytes + s_bytes)
++                rows[tgt] = rows[src]
++                continue
++            num_pages = index_k.shape[0]
++            k_view = index_k[:, : page_size * k_bytes].view(num_pages, page_size, k_bytes)
++            s_view = index_k[:, page_size * k_bytes :].view(num_pages, page_size, s_bytes)
++            k_view[tgt_page, tgt_off] = k_view[src_page, src_off]
++            s_view[tgt_page, tgt_off] = s_view[src_page, src_off]
+ 
+     def get_local_buffer(self, layer_id: int) -> torch.Tensor:
+         if self.pool.layer_transfer_counter is not None:

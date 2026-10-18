@@ -1,0 +1,17 @@
+{
+ "acc_dir": "/cache/accuracy/diffusiongemma-26b-a4b_standard_20260928-081104",
+ "control": "dg_stock",
+ "control_found": false,
+ "arms": {
+  "dg_standard": {
+   "error": "missing record",
+   "control": false,
+   "arm": false
+  },
+  "dg_standard_adaptive": {
+   "error": "missing record",
+   "control": false,
+   "arm": false
+  }
+ }
+}

@@ -1,0 +1,132 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "v20_megamoe_w4a4_bal",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20260928-064501",
+  "_acc_control": "v20_stock"
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--chunked-prefill-size",
+  "32768",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion"
+ ],
+ "ladder": [
+  16
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-28T06:45:12Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 16,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 102.51,
+   "warm_agg_out_tok_s": 670.0,
+   "steady_agg_out_tok_s": 904.0,
+   "ttft_p90_s": 1.5,
+   "ttft_p99_s": 3.73,
+   "ttft_max_s": 4.42,
+   "turn_wall_p50_s": 3.13,
+   "turn_wall_p90_s": 6.0,
+   "turn_wall_p99_s": 8.28,
+   "tail_last10pct_s": 10.4,
+   "warm_session_rate_sum": 1087.5,
+   "warm_ttft_p50_s": 0.9,
+   "hit_rate": 0.9339,
+   "mean_prompt_tokens": 62584,
+   "mean_out_tokens": 243.7,
+   "accept_len": 4.27
+  }
+ ],
+ "booted": true,
+ "boot_min": 12.8,
+ "kv_pool_tokens": [
+  1412096
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-8e472cea-db9b-4283-2dcb-02f43348c5ce",
+   "GPU-e6b55a98-36ba-6f79-3db0-bab2345857f6",
+   "GPU-f1eaebfc-109b-aa8f-06c1-e86ff178360e",
+   "GPU-d617e6dc-7181-01a8-ba8f-545bf2904050",
+   "GPU-3137bc64-113f-30d5-3321-d9c2747c27f4",
+   "GPU-ede2bbca-efff-d0b2-8c3f-c8005360e39c",
+   "GPU-f02060fd-1ce0-2372-635f-14c1846f5790",
+   "GPU-0f642246-2b0f-9a0f-14f4-16f1f68d5d91"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/deepseek-v4-pro_standard_20260928-064501/accuracy_v20_megamoe_w4a4_bal.json",
+  "seconds": 66.4,
+  "prompts_source": "sessions:real_sessions_dsv4_46k_t8_420.json",
+  "gsm8k_acc": 0.975
+ },
+ "sessions_dropped_oversize": 14,
+ "dp_peak_running": {
+  "0": 22,
+  "1": 21,
+  "2": 23,
+  "3": 24,
+  "4": 23,
+  "5": 23,
+  "6": 21,
+  "7": 23
+ },
+ "numinous_log": [
+  "[2026-09-28 06:58:00 DP3 TP3 EP3] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-28 06:58:35 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [3857, 4096, 4096, 4096, 4096, 4096, 4096, 4096], rank rows 3857 -> 4067"
+ ]
+}

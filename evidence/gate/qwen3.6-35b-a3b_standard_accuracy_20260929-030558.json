@@ -1,0 +1,12 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260929-010417",
+ "control": "qwen36_std_fullmamba_mtp4",
+ "control_found": true,
+ "arms": {
+  "kv4tri_q36_nvfp4": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}

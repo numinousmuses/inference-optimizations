@@ -1,0 +1,29 @@
+From dca1556411bd82bc3c6742dfa8ba9ab446d88465 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 00:07:11 +0000
+Subject: [PATCH] dcp on dsa: skip the dense model-side extend gather for the
+ DSA backend (656-wide fp8 rows; the backend gathers itself)
+
+---
+ .../deepseek_common/attention_forward_methods/forward_mla.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+index bda9659a1..2055933a9 100644
+--- a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
++++ b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+@@ -626,6 +626,11 @@ class DeepseekMLAForwardMixin:
+                         q_nope_out=q_nope_out,
+                         q_pe=q_pe,
+                     )
++            elif forward_batch.forward_mode.is_extend() and self.current_attention_backend in ("dsa", "nsa"):
++                # Numinous DCP on DSA: the backend gathers the prefix itself (fp8 packed rows need dequantising
++                # and the sparse kernel wants a request-contiguous layout); the dense gather below would write
++                # 576-wide bf16 rows into a 656-wide fp8 buffer.
++                pass
+             elif forward_batch.forward_mode.is_extend():
+                 # for extend, gather kv
+                 all_gather_kv_cache_for_mla_extend(
+-- 
+2.50.1 (Apple Git-155)
+

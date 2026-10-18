@@ -1,0 +1,6 @@
+{
+ "acc_dir": "/cache/accuracy/glm-5.3_standard_20260929-052059",
+ "control": "kvmix_f30",
+ "control_found": false,
+ "arms": {}
+}

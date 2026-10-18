@@ -1,0 +1,163 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260929-025853",
+ "control": "qwen36_std_fullmamba_mtp4",
+ "control_found": true,
+ "arms": {
+  "qwen36_std_fullmamba_mtp4_kv4trtnoise": {
+   "control": "qwen36_std_fullmamba_mtp4",
+   "arm": "qwen36_std_fullmamba_mtp4_kv4trtnoise",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.102741776152789,
+     "kl_p99": 3.4163213782206743,
+     "kl_max": 15.147189224437609,
+     "top1_agree": 0.9475,
+     "dlp_mean": 0.16928661171875,
+     "dlp_p99": 3.4811686600000007,
+     "dlp_max": 20.771801
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.865,
+     "acc_arm": 0.85,
+     "drop_pts": 1.5000000000000013,
+     "control_only_correct": 9,
+     "arm_only_correct": 6,
+     "answer_changed": 30,
+     "mcnemar_p_arm_worse": 0.303619384765625
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": true,
+     "kl_p99": true,
+     "top1_agree": true,
+     "dlp_p99": true,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.308225328458367,
+     "kl_p99_max": 10.248964134662023,
+     "top1_agree_min": 0.8425,
+     "dlp_p99_max": 10.443505980000001,
+     "em_drop_max_pts": 4.5000000000000036,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": true,
+    "noise_given": true,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "kv4trt_q36_fp8": {
+   "control": "qwen36_std_fullmamba_mtp4",
+   "arm": "kv4trt_q36_fp8",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.11359437373694961,
+     "kl_p99": 3.9430686081494364,
+     "kl_max": 16.985494353521585,
+     "top1_agree": 0.94384765625,
+     "dlp_mean": 0.1869835144140625,
+     "dlp_p99": 3.7482421400000003,
+     "dlp_max": 22.83437
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.865,
+     "acc_arm": 0.9,
+     "drop_pts": -3.500000000000003,
+     "control_only_correct": 5,
+     "arm_only_correct": 12,
+     "answer_changed": 26,
+     "mcnemar_p_arm_worse": 0.9754791259765625
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": true,
+     "kl_p99": true,
+     "top1_agree": true,
+     "dlp_p99": true,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.308225328458367,
+     "kl_p99_max": 10.248964134662023,
+     "top1_agree_min": 0.8425,
+     "dlp_p99_max": 10.443505980000001,
+     "em_drop_max_pts": 4.5000000000000036,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": true,
+    "noise_given": true,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "kv4trt_q36_nvfp4": {
+   "control": "qwen36_std_fullmamba_mtp4",
+   "arm": "kv4trt_q36_nvfp4",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.11855709490705,
+     "kl_p99": 3.956904475106654,
+     "kl_max": 15.639226447451867,
+     "top1_agree": 0.94166015625,
+     "dlp_mean": 0.19574080927734375,
+     "dlp_p99": 3.964742620000059,
+     "dlp_max": 23.151878
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.865,
+     "acc_arm": 0.88,
+     "drop_pts": -1.5000000000000013,
+     "control_only_correct": 8,
+     "arm_only_correct": 11,
+     "answer_changed": 33,
+     "mcnemar_p_arm_worse": 0.8203582763671875
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": true,
+     "kl_p99": true,
+     "top1_agree": true,
+     "dlp_p99": true,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.308225328458367,
+     "kl_p99_max": 10.248964134662023,
+     "top1_agree_min": 0.8425,
+     "dlp_p99_max": 10.443505980000001,
+     "em_drop_max_pts": 4.5000000000000036,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": true,
+    "noise_given": true,
+    "tf_skipped": false,
+    "note": null
+   }
+  }
+ }
+}

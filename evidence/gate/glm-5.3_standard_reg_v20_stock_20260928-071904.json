@@ -1,0 +1,120 @@
+{
+ "cell": "glm-5.3/standard",
+ "arm": "v20_stock",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "bb63bb89e3874dd5",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-attention-local-control-broadcast",
+  "--enable-dp-lm-head",
+  "--quantization",
+  "modelopt_fp4",
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--chunked-prefill-size",
+  "16384",
+  "--enable-prefill-delayer",
+  "--mem-fraction-static",
+  "0.90",
+  "--cuda-graph-max-bs-decode",
+  "48",
+  "--max-running-requests",
+  "512",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--reasoning-parser",
+  "glm45",
+  "--tool-call-parser",
+  "glm47",
+  "--num-continuous-decode-steps",
+  "8"
+ ],
+ "ladder": [
+  64
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_t8_300.json",
+ "started": "2026-09-28T06:51:21Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 32.97,
+   "warm_agg_out_tok_s": 951.4,
+   "steady_agg_out_tok_s": 1228.2,
+   "ttft_p90_s": 5.81,
+   "ttft_p99_s": 10.02,
+   "ttft_max_s": 10.78,
+   "turn_wall_p50_s": 9.57,
+   "turn_wall_p90_s": 19.63,
+   "turn_wall_p99_s": 28.45,
+   "tail_last10pct_s": 27.0,
+   "warm_session_rate_sum": 1423.7,
+   "warm_ttft_p50_s": 2.2,
+   "hit_rate": 0.9627,
+   "mean_prompt_tokens": 92950,
+   "mean_out_tokens": 247.3,
+   "accept_len": 3.11
+  }
+ ],
+ "booted": true,
+ "boot_min": 18.9,
+ "kv_pool_tokens": [
+  1655424
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-da8bc312-c9e1-62a9-be67-8d93d17e6dfc",
+   "GPU-82ee561b-9564-31ec-7493-3cb669dea066",
+   "GPU-91e3a233-7561-3aab-6692-84a2de195394",
+   "GPU-8277b521-7a5d-b592-38a5-e52c0ec27cd2",
+   "GPU-5e5a5a50-e704-cafe-aab6-8533905f10b4",
+   "GPU-ad700d4c-af69-4451-3647-abe336628a58",
+   "GPU-32a65e7c-bef9-78d8-565f-88003ec82a31",
+   "GPU-9efc9f77-2626-a425-b436-7c904fb24b29"
+  ]
+ },
+ "sessions_dropped_oversize": 9,
+ "dp_peak_running": {
+  "0": 8,
+  "1": 8,
+  "2": 8,
+  "3": 8,
+  "4": 8,
+  "5": 8,
+  "6": 8,
+  "7": 8
+ },
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 263,
+  "accept_len_mean": 3.091,
+  "accept_len_p10": 2.6,
+  "accept_len_p50": 3.16,
+  "accept_len_p90": 3.49,
+  "accept_rate_mean": 0.697
+ }
+}

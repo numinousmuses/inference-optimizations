@@ -1,0 +1,88 @@
+{
+ "cell": "gemma-4-26b-a4b/standard",
+ "arm": "v20_stock",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/gemma-4-26b-a4b_standard_20260928-102637",
+  "_acc_control": "v20_stock"
+ },
+ "config_digest": "3c6a1a658c086425",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--moe-runner-backend",
+  "flashinfer_cutlass",
+  "--mem-fraction-static",
+  "0.86",
+  "--scheduler-recv-interval",
+  "16",
+  "--max-running-requests",
+  "320",
+  "--swa-full-tokens-ratio",
+  "0.10",
+  "--reasoning-parser",
+  "gemma4",
+  "--tool-call-parser",
+  "gemma4"
+ ],
+ "ladder": [
+  1
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-28T10:26:41Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 1,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 61.28,
+   "warm_agg_out_tok_s": 36.2,
+   "steady_agg_out_tok_s": null,
+   "ttft_p90_s": 6.18,
+   "ttft_p99_s": 6.18,
+   "ttft_max_s": 6.18,
+   "turn_wall_p50_s": 12.63,
+   "turn_wall_p90_s": 12.63,
+   "turn_wall_p99_s": 12.63,
+   "tail_last10pct_s": null,
+   "warm_session_rate_sum": 36.2,
+   "warm_ttft_p50_s": 4.53,
+   "hit_rate": 0.8782,
+   "mean_prompt_tokens": 116229,
+   "mean_out_tokens": 400.0,
+   "accept_len": null
+  }
+ ],
+ "booted": true,
+ "boot_min": 2.3,
+ "kv_pool_tokens": [
+  3260590
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-2d474e05-0043-aa20-c7bd-6c72cf3b9c15"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/gemma-4-26b-a4b_standard_20260928-102637/accuracy_v20_stock.json",
+  "seconds": 223.6,
+  "prompts_source": "sessions:real_sessions_240.json",
+  "gsm8k_acc": 0.945
+ },
+ "sessions_dropped_oversize": 1,
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 0
+ }
+}

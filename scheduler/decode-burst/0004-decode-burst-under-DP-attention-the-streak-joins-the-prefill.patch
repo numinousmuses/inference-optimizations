@@ -1,0 +1,253 @@
+From b9a41fddf891f7a830a9a4becf741deef64e90ce Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 19:49:08 +0000
+Subject: [PATCH] decode burst under DP attention: the streak joins the prefill
+ delayer's negotiation (sixth gathered field), so every rank holds prefill
+ together while any rank with running decodes is mid-streak; bounded by
+ max_delay_passes. 3 tests.
+
+---
+ python/sglang/srt/managers/prefill_delayer.py | 30 ++++++++++--
+ python/sglang/srt/managers/schedule_policy.py | 10 ++--
+ python/sglang/srt/managers/scheduler.py       |  2 +
+ test/numinous/test_delayer_burst.py           | 48 +++++++++++++++++++
+ 4 files changed, 83 insertions(+), 7 deletions(-)
+ create mode 100644 test/numinous/test_delayer_burst.py
+
+diff --git a/python/sglang/srt/managers/prefill_delayer.py b/python/sglang/srt/managers/prefill_delayer.py
+index 5c7e968e0..16f55b332 100644
+--- a/python/sglang/srt/managers/prefill_delayer.py
++++ b/python/sglang/srt/managers/prefill_delayer.py
+@@ -126,9 +126,9 @@ class PrefillDelayer:
+ 
+         # Fields packed per rank into the all-gather tensor: prefillable,
+         # token_watermark_force_allow, running_batch, max_prefill_bs,
+-        # waiting_queue_len.
++        # waiting_queue_len, decode_streak (Numinous: steps since this rank's last prefill).
+         self._global_info_buffer = torch.empty(
+-            (dp_size_dim, attn_tp_size, 5),
++            (dp_size_dim, attn_tp_size, 6),
+             dtype=torch.int64,
+             device=self._gather_device,
+         )
+@@ -150,6 +150,8 @@ class PrefillDelayer:
+         max_prefill_bs: int = 0,
+         max_running_requests: int = 0,
+         waiting_queue_len: int = 0,
++        decode_streak: int = 0,
++        decode_burst: int = 1,
+     ) -> _NegotiateOutput:
+         out = self._negotiate_should_allow_prefill_pure(
+             prev_state=self._curr_state,
+@@ -159,6 +161,8 @@ class PrefillDelayer:
+             max_prefill_bs=max_prefill_bs,
+             max_running_requests=max_running_requests,
+             waiting_queue_len=waiting_queue_len,
++            decode_streak=decode_streak,
++            decode_burst=decode_burst,
+         )
+         self._curr_state = out.next_state
+         return out
+@@ -173,6 +177,8 @@ class PrefillDelayer:
+         max_prefill_bs: int = 0,
+         max_running_requests: int = 0,
+         waiting_queue_len: int = 0,
++        decode_streak: int = 0,
++        decode_burst: int = 1,
+     ) -> _NegotiateOutput:
+         # Compute local states
+         local_token_watermark_force_allow = (
+@@ -188,12 +194,22 @@ class PrefillDelayer:
+             running_batch=running_batch,
+             max_prefill_bs=max_prefill_bs,
+             waiting_queue_len=waiting_queue_len,
++            decode_streak=decode_streak,
+         )
+         global_prefillable = tp0_info[:, 0]
+         global_token_watermark_force_allow = tp0_info[:, 1]
+         global_running_batch = tp0_info[:, 2]
+         global_max_prefill_bs = tp0_info[:, 3]
+         global_waiting_queue_len = tp0_info[:, 4]
++        global_decode_streak = tp0_info[:, 5]
++        # Numinous decode burst under DP: every rank sees the same gathered streaks, so this decision is uniform.
++        # Hold prefill while any rank with running decodes has run fewer than `decode_burst` decode steps since its
++        # last prefill; bounded by max_delay_passes like the other delays so first-token latency stays finite.
++        burst_hold = False
++        if decode_burst > 1:
++            has_running = global_running_batch > 0
++            if bool(has_running.any().item()):
++                burst_hold = int(global_decode_streak[has_running].min().item()) < decode_burst
+ 
+         # Compute derived global states
+         if global_prefillable.min().item() > 0:
+@@ -268,7 +284,7 @@ class PrefillDelayer:
+                 < global_max_prefill_bs_max
+             )
+ 
+-            if slot_condition or queue_condition:
++            if slot_condition or queue_condition or burst_hold:
+                 # When the "max_decode_bs - running_bs < max_prefill_bs" condition is met,
+                 # the first merge_batch causes the decoding to fail to reach the maximum batch size.
+                 if self.skip_first_delayer:
+@@ -313,7 +329,7 @@ class PrefillDelayer:
+                 **wait_info,
+             )
+         elif prefillable_status == "mixed":
+-            if global_exists_token_watermark_force_allow:
++            if global_exists_token_watermark_force_allow and not burst_hold:
+                 return _NegotiateOutput(
+                     next_state=None,
+                     output_allow=True,
+@@ -350,6 +366,7 @@ class PrefillDelayer:
+         running_batch: int = 0,
+         max_prefill_bs: int = 0,
+         waiting_queue_len: int = 0,
++        decode_streak: int = 0,
+     ):
+         local_info = torch.tensor(
+             [
+@@ -358,6 +375,7 @@ class PrefillDelayer:
+                 running_batch,
+                 max_prefill_bs,
+                 waiting_queue_len,
++                decode_streak,
+             ],
+             device=self._gather_device,
+             dtype=torch.int64,
+@@ -423,6 +441,8 @@ class PrefillDelayerSinglePassExecutor:
+         max_prefill_bs: int = 0,
+         max_running_requests: int = 0,
+         waiting_queue_len: int = 0,
++        decode_streak: int = 0,
++        decode_burst: int = 1,
+     ) -> bool:
+         if local_prefillable:
+             self._attempted_prefill_bs = max(
+@@ -441,6 +461,8 @@ class PrefillDelayerSinglePassExecutor:
+                 max_prefill_bs=max_prefill_bs,
+                 max_running_requests=max_running_requests,
+                 waiting_queue_len=waiting_queue_len,
++                decode_streak=decode_streak,
++                decode_burst=decode_burst,
+             )
+         return self._result.output_allow
+ 
+diff --git a/python/sglang/srt/managers/schedule_policy.py b/python/sglang/srt/managers/schedule_policy.py
+index 6780d914a..825becfab 100644
+--- a/python/sglang/srt/managers/schedule_policy.py
++++ b/python/sglang/srt/managers/schedule_policy.py
+@@ -517,6 +517,8 @@ class PrefillAdder:
+         max_running_requests: Optional[int] = None,
+         prefill_max_requests: Optional[int] = None,
+         prefill_delayer_single_pass: Optional[PrefillDelayerSinglePassExecutor] = None,
++        decode_streak: int = 0,
++        decode_burst: int = 1,
+         dllm_config: Optional[DllmConfig] = None,
+         waiting_queue_len: int = 0,
+         prefill_tile_block_m: int = 64,
+@@ -610,6 +612,8 @@ class PrefillAdder:
+         self.prefill_context_parallel_enabled = is_prefill_context_parallel_enabled()
+         self.prefill_max_requests = prefill_max_requests
+         self.prefill_delayer_single_pass = prefill_delayer_single_pass
++        self.decode_streak = decode_streak
++        self.decode_burst = decode_burst
+         self.max_prefill_bs = max_prefill_bs
+         # Snapshot of scheduler waiting_queue length at the start of this
+         # prefill pass. Used by PrefillDelayer's queue-based trigger.
+@@ -1020,7 +1024,7 @@ class PrefillAdder:
+                 running_batch=self.running_batch.batch_size(),
+                 max_prefill_bs=self.max_prefill_bs,
+                 max_running_requests=self.max_running_requests,
+-                waiting_queue_len=self.waiting_queue_len,
++                waiting_queue_len=self.waiting_queue_len, decode_streak=self.decode_streak, decode_burst=self.decode_burst,
+             )
+ 
+         cand_extend_input_len = len(req.full_untruncated_fill_ids) - len(
+@@ -1136,7 +1140,7 @@ class PrefillAdder:
+                 running_batch=self.running_batch.batch_size(),
+                 max_prefill_bs=self.max_prefill_bs,
+                 max_running_requests=self.max_running_requests,
+-                waiting_queue_len=self.waiting_queue_len,
++                waiting_queue_len=self.waiting_queue_len, decode_streak=self.decode_streak, decode_burst=self.decode_burst,
+             )
+         ):
+             return AddReqResult.OTHER
+@@ -1305,7 +1309,7 @@ class PrefillAdder:
+                     running_batch=self.running_batch.batch_size(),
+                     max_prefill_bs=self.max_prefill_bs,
+                     max_running_requests=self.max_running_requests,
+-                    waiting_queue_len=self.waiting_queue_len,
++                    waiting_queue_len=self.waiting_queue_len, decode_streak=self.decode_streak, decode_burst=self.decode_burst,
+                 )
+             ):
+                 return AddReqResult.OTHER
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index a9029ee80..73475c19f 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -3290,6 +3290,8 @@ class Scheduler(
+             max_running_requests=self.max_running_requests,
+             prefill_max_requests=get_schedule().prefill_max_requests,
+             prefill_delayer_single_pass=prefill_delayer_single_pass,
++            decode_streak=self.decode_streak,
++            decode_burst=(self.decode_burst if self.require_mlp_sync else 1),  # under DP the delayer holds; TP holds in get_next_batch_to_run
+             dllm_config=self.dllm_config,
+             waiting_queue_len=len(self.waiting_queue),
+             prefill_tile_block_m=prefill_tile_block_m,
+diff --git a/test/numinous/test_delayer_burst.py b/test/numinous/test_delayer_burst.py
+new file mode 100644
+index 000000000..5f6a50ed6
+--- /dev/null
++++ b/test/numinous/test_delayer_burst.py
+@@ -0,0 +1,48 @@
++"""The decode-burst rule inside the prefill delayer's negotiation must be uniform across ranks and bounded."""
++import sys, pathlib
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "python"))
++import torch  # noqa: E402
++
++from sglang.srt.managers.prefill_delayer import PrefillDelayer, _State  # noqa: E402
++
++
++def _delayer(fake_gathered):
++    d = PrefillDelayer.__new__(PrefillDelayer)
++    d._token_usage_low_watermark = None
++    d._max_delay_passes = 4
++    d._max_delay_ms = 10_000
++    d._queue_trigger_enabled = False
++    d._queue_min_ratio = 0.0
++    d.enable_dp_attention = True
++    d.dp_size = 2
++    d.skip_first_delayer = False
++    d._metrics_collector = None
++    d._gather_info = lambda **kw: torch.tensor(fake_gathered, dtype=torch.int64)
++    return d
++
++
++def test_burst_holds_prefill_while_a_rank_is_mid_streak():
++    # rank0 has decodes running and 2 decode steps since its last prefill, rank1 idle
++    d = _delayer([[1, 0, 8, 4, 2, 2], [1, 0, 0, 4, 0, 9]])
++    out = d._negotiate_should_allow_prefill_pure(None, True, 0.5, running_batch=8, max_prefill_bs=4,
++                                                 max_running_requests=64, waiting_queue_len=2, decode_streak=2, decode_burst=8)
++    assert out.output_allow is False and out.output_reason == "delay"
++
++
++def test_burst_releases_after_the_streak_and_is_bounded():
++    d = _delayer([[1, 0, 8, 4, 2, 9], [1, 0, 8, 4, 2, 9]])
++    out = d._negotiate_should_allow_prefill_pure(None, True, 0.5, running_batch=8, max_prefill_bs=4,
++                                                 max_running_requests=64, waiting_queue_len=2, decode_streak=9, decode_burst=8)
++    assert out.output_allow is True
++    d2 = _delayer([[1, 0, 8, 4, 2, 1], [1, 0, 8, 4, 2, 1]])
++    st = _State(); st = st.bump_delayed_count(); st = st.bump_delayed_count(); st = st.bump_delayed_count()
++    out2 = d2._negotiate_should_allow_prefill_pure(st, True, 0.5, running_batch=8, max_prefill_bs=4,
++                                                   max_running_requests=64, waiting_queue_len=2, decode_streak=1, decode_burst=8)
++    assert out2.output_allow is True and out2.output_reason == "wait_timeout"
++
++
++def test_burst_off_by_default():
++    d = _delayer([[1, 0, 8, 4, 2, 0], [1, 0, 8, 4, 2, 0]])
++    out = d._negotiate_should_allow_prefill_pure(None, True, 0.5, running_batch=8, max_prefill_bs=4,
++                                                 max_running_requests=64, waiting_queue_len=2, decode_streak=0, decode_burst=1)
++    assert out.output_allow is True
+-- 
+2.50.1 (Apple Git-155)
+

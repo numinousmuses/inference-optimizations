@@ -1,0 +1,209 @@
+From 77c91e2679e827b776e1ea5dd0b38b95368f1eea Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 18:24:24 +0000
+Subject: [PATCH] dcp on dsa: the EAGLE draft extend is a merge phase (owned
+ slots, (o, lse)) instead of gathering the whole prefix every decode step;
+ fp8-dot variant of the prefill kernel
+
+---
+ .../attention/dsa/sparse_prefill_fp8.py       | 77 ++++++++++++++-----
+ .../srt/layers/attention/dsa_backend.py       | 24 ++----
+ .../attention_forward_methods/forward_mla.py  |  4 +
+ 3 files changed, 68 insertions(+), 37 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa/sparse_prefill_fp8.py b/python/sglang/srt/layers/attention/dsa/sparse_prefill_fp8.py
+index 9eed33734..414993058 100644
+--- a/python/sglang/srt/layers/attention/dsa/sparse_prefill_fp8.py
++++ b/python/sglang/srt/layers/attention/dsa/sparse_prefill_fp8.py
+@@ -40,6 +40,7 @@ def _sparse_prefill_fp8_kernel(
+     BLOCK_N: tl.constexpr,  # rows per iteration
+     sm_scale,
+     has_len: tl.constexpr,
++    FP8_DOT: tl.constexpr,  # q and k tiles multiplied as e4m3 on the tensor cores; p in e4m3 for PV
+     stride_qt, stride_qh, stride_kv, stride_it,
+ ):
+     t = tl.program_id(0)
+@@ -68,23 +69,39 @@ def _sparse_prefill_fp8_kernel(
+     q_n1 = tl.load(q_base + 128 + offs_tile_d[None, :], mask=h_mask[:, None], other=0.0)
+     q_n2 = tl.load(q_base + 256 + offs_tile_d[None, :], mask=h_mask[:, None], other=0.0)
+     q_n3 = tl.load(q_base + 384 + offs_tile_d[None, :], mask=h_mask[:, None], other=0.0)
++    if FP8_DOT:
++        qmax = tl.maximum(tl.maximum(tl.max(tl.abs(q_n0.to(tl.float32)), axis=1), tl.max(tl.abs(q_n1.to(tl.float32)), axis=1)),
++                          tl.maximum(tl.max(tl.abs(q_n2.to(tl.float32)), axis=1), tl.max(tl.abs(q_n3.to(tl.float32)), axis=1)))
++        qs = tl.where(qmax > 0, qmax / 448.0, 1.0)                       # [HP] per-head scale
++        q8_0 = (q_n0.to(tl.float32) / qs[:, None]).to(tl.float8e4nv)
++        q8_1 = (q_n1.to(tl.float32) / qs[:, None]).to(tl.float8e4nv)
++        q8_2 = (q_n2.to(tl.float32) / qs[:, None]).to(tl.float8e4nv)
++        q8_3 = (q_n3.to(tl.float32) / qs[:, None]).to(tl.float8e4nv)
+     acc0 = tl.zeros([HP, 128], tl.float32)
+     acc1 = tl.zeros([HP, 128], tl.float32)
+     acc2 = tl.zeros([HP, 128], tl.float32)
+     acc3 = tl.zeros([HP, 128], tl.float32)
+ 
+-    for start in range(sp * KS, (sp + 1) * KS, BLOCK_N):
+-        n_idx = start + offs_n
+-        n_ok = n_idx < valid
+-        rows = tl.load(idx_ptr + t * stride_it + n_idx, mask=n_ok, other=-1)
+-        row_ok = n_ok & (rows >= 0)
++    # indices of this split, loaded once; the row gathers of block i+1 are issued before block i's math
++    start0 = sp * KS
++    n_idx = start0 + offs_n
++    n_ok = n_idx < valid
++    rows_nxt = tl.load(idx_ptr + t * stride_it + n_idx, mask=n_ok, other=-1)
++    ok_nxt = n_ok & (rows_nxt >= 0)
++    for it in range(0, KS // BLOCK_N):
++        rows = rows_nxt
++        row_ok = ok_nxt
+         rows_safe = tl.where(row_ok, rows, 0).to(tl.int64)
+         row_base = kv_ptr + rows_safe[:, None] * stride_kv
+-        # K tiles as bf16 [BLOCK_N, 128], scales [BLOCK_N] per tile, rope [BLOCK_N, 64]
+-        k0 = tl.load(row_base + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True).to(tl.bfloat16)
+-        k1 = tl.load(row_base + 128 + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True).to(tl.bfloat16)
+-        k2 = tl.load(row_base + 256 + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True).to(tl.bfloat16)
+-        k3 = tl.load(row_base + 384 + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True).to(tl.bfloat16)
++        k8_0 = tl.load(row_base + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True)
++        k8_1 = tl.load(row_base + 128 + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True)
++        k8_2 = tl.load(row_base + 256 + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True)
++        k8_3 = tl.load(row_base + 384 + offs_tile_d[None, :], mask=row_ok[:, None], other=0).to(tl.float8e4nv, bitcast=True)
++        if not FP8_DOT:
++            k0 = k8_0.to(tl.bfloat16)
++            k1 = k8_1.to(tl.bfloat16)
++            k2 = k8_2.to(tl.bfloat16)
++            k3 = k8_3.to(tl.bfloat16)
+         sc_ptr = (kv_ptr + rows_safe * stride_kv + DIM_NOPE).to(tl.pointer_type(tl.float32))
+         sc0 = tl.load(sc_ptr, mask=row_ok, other=0.0)
+         sc1 = tl.load(sc_ptr + 1, mask=row_ok, other=0.0)
+@@ -92,12 +109,23 @@ def _sparse_prefill_fp8_kernel(
+         sc3 = tl.load(sc_ptr + 3, mask=row_ok, other=0.0)
+         rope_ptr = (kv_ptr + rows_safe[:, None] * stride_kv + DIM_NOPE + NUM_TILES * 4).to(tl.pointer_type(tl.bfloat16))
+         k_rope = tl.load(rope_ptr + offs_rope[None, :], mask=row_ok[:, None], other=0.0)
++        # next block's indices (independent of this block's math)
++        n_idx = start0 + (it + 1) * BLOCK_N + offs_n
++        n_ok = (n_idx < valid) & (n_idx < start0 + KS)
++        rows_nxt = tl.load(idx_ptr + t * stride_it + n_idx, mask=n_ok, other=-1)
++        ok_nxt = n_ok & (rows_nxt >= 0)
+ 
+-        # scores: sum over tiles of scale_tile[row] x (q_tile . kq_tile)
+-        s = tl.dot(q_n0, tl.trans(k0), out_dtype=tl.float32) * sc0[None, :]
+-        s += tl.dot(q_n1, tl.trans(k1), out_dtype=tl.float32) * sc1[None, :]
+-        s += tl.dot(q_n2, tl.trans(k2), out_dtype=tl.float32) * sc2[None, :]
+-        s += tl.dot(q_n3, tl.trans(k3), out_dtype=tl.float32) * sc3[None, :]
++        if FP8_DOT:
++            s = tl.dot(q8_0, tl.trans(k8_0), out_dtype=tl.float32) * sc0[None, :]
++            s += tl.dot(q8_1, tl.trans(k8_1), out_dtype=tl.float32) * sc1[None, :]
++            s += tl.dot(q8_2, tl.trans(k8_2), out_dtype=tl.float32) * sc2[None, :]
++            s += tl.dot(q8_3, tl.trans(k8_3), out_dtype=tl.float32) * sc3[None, :]
++            s = s * qs[:, None]
++        else:
++            s = tl.dot(q_n0, tl.trans(k0), out_dtype=tl.float32) * sc0[None, :]
++            s += tl.dot(q_n1, tl.trans(k1), out_dtype=tl.float32) * sc1[None, :]
++            s += tl.dot(q_n2, tl.trans(k2), out_dtype=tl.float32) * sc2[None, :]
++            s += tl.dot(q_n3, tl.trans(k3), out_dtype=tl.float32) * sc3[None, :]
+         s += tl.dot(q_rope, tl.trans(k_rope), out_dtype=tl.float32)
+         s = s * sm_scale
+         s = tl.where(row_ok[None, :], s, float("-inf"))
+@@ -108,11 +136,17 @@ def _sparse_prefill_fp8_kernel(
+         p = tl.exp(s - m_safe[:, None])
+         p = tl.where(row_ok[None, :], p, 0.0)
+         l_i = l_i * alpha + tl.sum(p, axis=1)
+-        # values are the dequantised nope tiles: (p x scale_tile[row]) @ kq_tile
+-        acc0 = acc0 * alpha[:, None] + tl.dot((p * sc0[None, :]).to(tl.bfloat16), k0, out_dtype=tl.float32)
+-        acc1 = acc1 * alpha[:, None] + tl.dot((p * sc1[None, :]).to(tl.bfloat16), k1, out_dtype=tl.float32)
+-        acc2 = acc2 * alpha[:, None] + tl.dot((p * sc2[None, :]).to(tl.bfloat16), k2, out_dtype=tl.float32)
+-        acc3 = acc3 * alpha[:, None] + tl.dot((p * sc3[None, :]).to(tl.bfloat16), k3, out_dtype=tl.float32)
++        if FP8_DOT:
++            # p is in [0, 1]; e4m3 keeps ~2 significant digits, the per-tile scale rides on p to keep k as stored
++            acc0 = acc0 * alpha[:, None] + tl.dot((p * sc0[None, :]).to(tl.float8e4nv), k8_0, out_dtype=tl.float32)
++            acc1 = acc1 * alpha[:, None] + tl.dot((p * sc1[None, :]).to(tl.float8e4nv), k8_1, out_dtype=tl.float32)
++            acc2 = acc2 * alpha[:, None] + tl.dot((p * sc2[None, :]).to(tl.float8e4nv), k8_2, out_dtype=tl.float32)
++            acc3 = acc3 * alpha[:, None] + tl.dot((p * sc3[None, :]).to(tl.float8e4nv), k8_3, out_dtype=tl.float32)
++        else:
++            acc0 = acc0 * alpha[:, None] + tl.dot((p * sc0[None, :]).to(tl.bfloat16), k0, out_dtype=tl.float32)
++            acc1 = acc1 * alpha[:, None] + tl.dot((p * sc1[None, :]).to(tl.bfloat16), k1, out_dtype=tl.float32)
++            acc2 = acc2 * alpha[:, None] + tl.dot((p * sc2[None, :]).to(tl.bfloat16), k2, out_dtype=tl.float32)
++            acc3 = acc3 * alpha[:, None] + tl.dot((p * sc3[None, :]).to(tl.bfloat16), k3, out_dtype=tl.float32)
+         m_i = m_new
+ 
+     l_safe = tl.where(l_i > 0, l_i, 1.0)
+@@ -170,6 +204,7 @@ def sparse_prefill_fp8(
+     lengths: torch.Tensor | None = None,
+     block_n: int = 64,
+     splits: int = 8,
++    fp8_dot: bool = False,
+ ) -> tuple[torch.Tensor, torch.Tensor]:
+     """q [T, H, 576] bf16; kv_fp8_rows [N, 656] uint8 (FlashMLA fp8 layout); indices [T, K] int32 with -1 masked;
+     lengths [T] int32 valid prefix per row (optional). Returns (o [T, H, 512] bf16, lse [T, H] fp32, base e).
+@@ -194,7 +229,7 @@ def sparse_prefill_fp8(
+     len_arg = lengths.contiguous().to(torch.int32) if has_len else indices
+     _sparse_prefill_fp8_kernel[(T, splits)](
+         q, kv_fp8_rows, indices, len_arg, po, plse,
+-        K=K, KS=K // splits, H=H, HP=HP, BLOCK_N=block_n, sm_scale=sm_scale, has_len=has_len,
++        K=K, KS=K // splits, H=H, HP=HP, BLOCK_N=block_n, sm_scale=sm_scale, has_len=has_len, FP8_DOT=fp8_dot,
+         stride_qt=q.stride(0), stride_qh=q.stride(1), stride_kv=kv_fp8_rows.stride(0), stride_it=indices.stride(0),
+         num_warps=_NUM_WARPS, num_stages=_NUM_STAGES,
+     )
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 9e7319fd9..4dbeda329 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2160,26 +2160,17 @@ class DeepseekSparseAttnBackend(
+         elif dsa_impl == "flashmla_kv":
+             if q_rope is not None:
+                 q_all = concat_mla_absorb_q_general(q_nope, q_rope)
+-            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_target_verify():
+-                # Numinous DCP: verify rows are a merge phase (q heads gathered by the model side): keep the owned
+-                # selected slots and return (o, lse) for the cross-rank merge.
++            if get_parallel().dcp_enabled and (
++                forward_batch.forward_mode.is_target_verify() or forward_batch.forward_mode.is_draft_extend_v2()
++            ):
++                # Numinous DCP: verify rows and the draft's extend rows are merge phases (q heads gathered by the
++                # model side): keep the owned selected slots and return (o, lse) for the cross-rank merge. The
++                # draft extend used to gather the whole prefix here every decode step; that was the DCP slowdown.
+                 page_table_1 = self._dcp_owned_in_place(page_table_1)
+                 return self._forward_flashmla_kv_dcp(
+                     q_all=q_all, kv_cache=kv_cache, v_head_dim=layer.v_head_dim, sm_scale=layer.scaling,
+                     layer=layer, page_table_1=page_table_1, cache_seqlens=None,
+                 )
+-            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_draft_extend_v2():
+-                # Numinous DCP: the draft's extend keeps its own heads, so attention runs over the gathered prefix
+-                # (request-contiguous [prefix | extend]) with the bf16 sparse kernel and returns a plain tensor.
+-                kv_gathered = self._gather_dcp_prefix_kv(forward_batch, layer, k, k_rope)
+-                positions = self._pad_topk_indices(topk_indices, q_all.shape[0])
+-                # draft extend v2 extends every request by the same fixed draft width: rows = bs x width
+-                per_req = q_all.shape[0] // max(forward_batch.batch_size, 1)
+-                offsets = torch.repeat_interleave(metadata.cu_seqlens_k[: forward_batch.batch_size], per_req)
+-                ragged = torch.where(positions >= 0, positions + offsets.unsqueeze(1), positions)
+-                return self._forward_flashmla_sparse(
+-                    q_all=q_all, kv_cache=kv_gathered, page_table_1=ragged, sm_scale=layer.scaling, v_head_dim=layer.v_head_dim,
+-                )
+             return self._forward_flashmla_kv(
+                 q_all=q_all,
+                 kv_cache=kv_cache,
+@@ -2224,7 +2215,8 @@ class DeepseekSparseAttnBackend(
+         if get_parallel().dcp_enabled and not forward_batch.forward_mode.is_idle():
+             # Numinous DCP: every decode-phase call must hand (o, lse) to the cross-rank merge. A bare tensor here
+             # means a branch of this backend was reached that the DCP port does not cover yet; say which.
+-            is_decode_phase = forward_batch.forward_mode.is_decode() or forward_batch.forward_mode.is_target_verify()
++            is_decode_phase = (forward_batch.forward_mode.is_decode() or forward_batch.forward_mode.is_target_verify()
++                               or forward_batch.forward_mode.is_draft_extend_v2())
+             if is_decode_phase and not isinstance(out, tuple):
+                 impl = self.dsa_decode_impl if not forward_batch.forward_mode.is_extend_without_speculative() else self.dsa_prefill_impl
+                 raise RuntimeError(
+diff --git a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+index 905753eda..a8116d93e 100644
+--- a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
++++ b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+@@ -102,6 +102,10 @@ def is_dcp_mla_decode_phase(forward_batch: ForwardBatch, attention_backend: Opti
+         return False
+     if forward_batch.forward_mode.is_decode() or forward_batch.forward_mode.is_target_verify():
+         return True
++    if attention_backend in ("dsa", "nsa") and forward_batch.forward_mode.is_draft_extend_v2():
++        # Numinous: the EAGLE draft's extend is a few tokens per request; gathering the whole prefix for it on
++        # every decode step is what made DCP decode slow. Treat it as a merge phase like verify.
++        return True
+     import os
+     return (
+         attention_backend in ("dsa", "nsa")
+-- 
+2.50.1 (Apple Git-155)
+

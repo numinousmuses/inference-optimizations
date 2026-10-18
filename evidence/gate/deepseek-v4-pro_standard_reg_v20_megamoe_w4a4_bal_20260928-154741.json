@@ -1,0 +1,4 @@
+{
+ "arm": "v20_megamoe_w4a4_bal",
+ "error": "ConnectionError: [Errno -3] Temporary failure in name resolution"
+}

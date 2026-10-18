@@ -1,0 +1,51 @@
+From a1e28159b558633fe8a4fa2c16a4cc544a9874a1 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 02:12:03 +0000
+Subject: [PATCH] dcp on dsa: gathered-prefix helper tolerates dummy batches
+ (no prefix lens, no dcp metadata)
+
+---
+ .../srt/layers/attention/dsa_backend.py       | 20 ++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 361084307..bb4bfb6b8 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2918,8 +2918,22 @@ class DeepseekSparseAttnBackend(
+         from sglang.srt.layers.dcp.comm import all_gather_kv_cache_for_dcp
+ 
+         meta = forward_batch.attn_dcp_metadata
+-        prefix_lens = list(forward_batch.extend_prefix_lens_cpu)
+-        extend_lens = list(forward_batch.extend_seq_lens_cpu)
++        bs = forward_batch.batch_size
++        if forward_batch.extend_prefix_lens_cpu is not None:
++            prefix_lens = list(forward_batch.extend_prefix_lens_cpu)
++        elif forward_batch.extend_prefix_lens is not None:
++            prefix_lens = forward_batch.extend_prefix_lens.cpu().tolist()
++        else:
++            prefix_lens = [0] * bs   # dummy / warm-up batches carry no prefix
++        if forward_batch.extend_seq_lens_cpu is not None:
++            extend_lens = list(forward_batch.extend_seq_lens_cpu)
++        elif forward_batch.extend_seq_lens is not None:
++            extend_lens = forward_batch.extend_seq_lens.cpu().tolist()
++        else:
++            extend_lens = [k.shape[0] // max(bs, 1)] * bs
++        new_only = torch.cat([k.view(k.shape[0], -1), k_rope.view(k_rope.shape[0], -1)], dim=-1)
++        if meta is None or sum(prefix_lens) == 0:
++            return new_only.unsqueeze(1)
+         kv_layer = self.token_to_kv_pool.get_key_buffer(layer.layer_id)
+         local_idx = meta.dcp_local_prefix_kv_indices
+         if self.dsa_kv_cache_store_fp8:
+@@ -2932,7 +2946,7 @@ class DeepseekSparseAttnBackend(
+             cache_k_nope, cache_k_rope, torch.tensor(prefix_lens), prefix_starts_cpu=torch.zeros(len(prefix_lens), dtype=torch.int64)
+         )
+         gathered = gathered.view(-1, gathered.shape[-1])
+-        new = torch.cat([k.view(k.shape[0], -1), k_rope.view(k_rope.shape[0], -1)], dim=-1).to(gathered.dtype)
++        new = new_only.to(gathered.dtype)
+         parts, p0, e0 = [], 0, 0
+         for pl, el in zip(prefix_lens, extend_lens):
+             parts.append(gathered[p0 : p0 + pl])
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1,0 +1,44 @@
+diff -ru fi_orig/csrc/fp4_kv_dequantization.cu fi_new/csrc/fp4_kv_dequantization.cu
+--- a/csrc/fp4_kv_dequantization.cu	2026-09-29 06:33:17.949741502 +0000
++++ b/csrc/fp4_kv_dequantization.cu	2026-09-29 06:33:27.960329807 +0000
+@@ -71,17 +71,19 @@
+ 
+   const int K_scales = K / NVFP4_BLOCK_SIZE;
+   const int K_packed = K / 2;
++  // 64-bit row offsets: M * K exceeds 2^31 for large calls.
++  const int64_t row64 = static_cast<int64_t>(row);
+ 
+   for (int i = tid; i < K_scales; i += BLOCK_SIZE) {
+-    smem_scales[i] = block_scales[row * K_scales + i];
++    smem_scales[i] = block_scales[row64 * K_scales + i];
+   }
+   __syncthreads();
+ 
+   constexpr int PACKED_PER_THREAD = ELTS_PER_THREAD / 2;
+   const int elts_per_block = BLOCK_SIZE * ELTS_PER_THREAD;
+ 
+-  const uint8_t* row_fp4 = fp4_data + row * K_packed;
+-  OutType* row_output = output + row * K;
++  const uint8_t* row_fp4 = fp4_data + row64 * K_packed;
++  OutType* row_output = output + row64 * K;
+ 
+   for (int base_col = 0; base_col < K; base_col += elts_per_block) {
+     const int col_start = base_col + tid * ELTS_PER_THREAD;
+diff -ru fi_orig/csrc/fp4_kv_quantization.cu fi_new/csrc/fp4_kv_quantization.cu
+--- a/csrc/fp4_kv_quantization.cu	2026-09-29 06:33:00.679243491 +0000
++++ b/csrc/fp4_kv_quantization.cu	2026-09-29 06:33:00.902985197 +0000
+@@ -189,9 +189,11 @@
+   constexpr int PACKED_PER_THREAD = CVT_ELTS_PER_THREAD / 2;
+   const int elts_per_block = BLOCK_SIZE * CVT_ELTS_PER_THREAD;
+ 
+-  const InType* row_input = input + row * K;
+-  uint8_t* row_fp4 = fp4_output + row * (K / 2);
+-  uint8_t* row_scales = block_scales + row * (K / NVFP4_BLOCK_SIZE);
++  // 64-bit row offsets: M * K exceeds 2^31 for large calls.
++  const int64_t row64 = static_cast<int64_t>(row);
++  const InType* row_input = input + row64 * K;
++  uint8_t* row_fp4 = fp4_output + row64 * (K / 2);
++  uint8_t* row_scales = block_scales + row64 * (K / NVFP4_BLOCK_SIZE);
+ 
+   for (int base_col = 0; base_col < K; base_col += elts_per_block) {
+     const int col_start = base_col + tid * CVT_ELTS_PER_THREAD;

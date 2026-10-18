@@ -1,0 +1,938 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "final_pro_full",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "flags_remove": [
+   "--moe-runner-backend",
+   "--chunked-prefill-size"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion",
+   "--chunked-prefill-size",
+   "65536",
+   "--num-continuous-decode-steps",
+   "8",
+   "--dsv4-attn-backend",
+   "trtllm"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/dp_extend_cap_hooks.py": "!run",
+   "operations/patches/pro_small_kernel_hooks.py": "!run",
+   "operations/patches/spec_hooks.py": "!run pro_attn",
+   "operations/patches/trtllm_attn_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_DP_EXTEND_CAP": "0",
+   "NUMINOUS_NORM_QUANT": "1",
+   "NUMINOUS_FP8_LM_HEAD": "1",
+   "NUMINOUS_DSV4_UNIFORM_POOL_BYTES": "1",
+   "SGLANG_DECODE_BURST_QUEUE_CAP": "2"
+  },
+  "_same_sessions": true,
+  "_probe_repeats": 1,
+  "_monitor": true,
+  "_max_chars": 600000,
+  "_gpu_label": "B200:8",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20261002-171953",
+  "_acc_control": "final_pro_full"
+ },
+ "config_digest": "ee1dabe55e8f860d",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--num-continuous-decode-steps",
+  "8",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--chunked-prefill-size",
+  "65536",
+  "--num-continuous-decode-steps",
+  "8",
+  "--dsv4-attn-backend",
+  "trtllm"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-10-02T18:25:11Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "flush_ok": true,
+   "warm_per_user_tok_s": 47.68,
+   "warm_agg_out_tok_s": 1310.3,
+   "steady_agg_out_tok_s": 1961.8,
+   "ttft_p90_s": 3.53,
+   "ttft_p99_s": 5.94,
+   "ttft_max_s": 10.64,
+   "turn_wall_p50_s": 6.61,
+   "turn_wall_p90_s": 11.43,
+   "turn_wall_p99_s": 15.92,
+   "tail_last10pct_s": 13.6,
+   "hit_by_turn": [
+    0.0006,
+    0.9249,
+    0.9219,
+    0.9299,
+    0.9544,
+    0.951,
+    0.9304,
+    0.9419
+   ],
+   "warm_low_hit_requests": 0,
+   "warm_requests": 448,
+   "warm_session_rate_sum": 2134.2,
+   "warm_ttft_p50_s": 1.4,
+   "hit_rate": 0.937,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 234.7,
+   "accept_len": 4.28
+  },
+  {
+   "repeat": 0,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "flush_ok": true,
+   "warm_per_user_tok_s": 26.11,
+   "warm_agg_out_tok_s": 2006.5,
+   "steady_agg_out_tok_s": 2557.3,
+   "ttft_p90_s": 4.32,
+   "ttft_p99_s": 6.89,
+   "ttft_max_s": 11.3,
+   "turn_wall_p50_s": 10.17,
+   "turn_wall_p90_s": 18.96,
+   "turn_wall_p99_s": 24.58,
+   "tail_last10pct_s": 15.3,
+   "hit_by_turn": [
+    0.0011,
+    0.9259,
+    0.927,
+    0.9352,
+    0.945,
+    0.9441,
+    0.937,
+    0.9484
+   ],
+   "warm_low_hit_requests": 0,
+   "warm_requests": 896,
+   "warm_session_rate_sum": 2888.3,
+   "warm_ttft_p50_s": 1.65,
+   "hit_rate": 0.9383,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 254.3,
+   "accept_len": 4.32
+  }
+ ],
+ "booted": true,
+ "boot_min": 22.8,
+ "kv_pool_tokens": [
+  1521664
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-efddfac4-4016-30bd-c541-0fdd2c568e4e",
+   "GPU-62d71320-c99c-318b-9623-16bcdc38faa3",
+   "GPU-edf7e172-67f0-88d5-10d8-ac8f9cf03e7e",
+   "GPU-a74d446d-ced7-a808-405f-7894c29b64c6",
+   "GPU-60f4ed1b-2643-d8ea-b6b0-e0bebeed6742",
+   "GPU-7749cb31-d98d-eb5f-92ed-668d9d6b04fa",
+   "GPU-9803f526-8fac-c4cd-49e0-673382a1887d",
+   "GPU-bddbe332-026f-95ee-c5d7-7e05506178d0"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/deepseek-v4-pro_standard_20261002-171953/accuracy_final_pro_full.json",
+  "seconds": 92.5,
+  "prompts_source": "sessions:real_sessions_dsv4_46k_t8_420.json",
+  "gsm8k_acc": 0.985
+ },
+ "sessions_dropped_oversize": 14,
+ "profile": {
+  "sessions": 128,
+  "steps": 20,
+  "bench": {
+   "warm_per_user_tok_s": 32.93,
+   "warm_agg_out_tok_s": 2335.8,
+   "steady_agg_out_tok_s": 3216.9,
+   "ttft_p90_s": 3.76,
+   "ttft_p99_s": 11.55,
+   "ttft_max_s": 12.26,
+   "turn_wall_p50_s": 8.91,
+   "turn_wall_p90_s": 17.99,
+   "turn_wall_p99_s": 27.21,
+   "tail_last10pct_s": 15.6,
+   "hit_by_turn": [
+    0.9972,
+    0.9136,
+    0.9333,
+    0.9416,
+    0.9467,
+    0.9464,
+    0.9436,
+    0.9536
+   ],
+   "warm_low_hit_requests": 0,
+   "warm_requests": 896,
+   "warm_session_rate_sum": 3291.3,
+   "warm_ttft_p50_s": 1.47,
+   "hit_rate": 0.941,
+   "mean_prompt_tokens": 62535,
+   "mean_out_tokens": 262.8
+  },
+  "summary": {
+   "trace_files": 8,
+   "ranks": [
+    {
+     "file": "1790967850.2947502-TP-0-DP-0-EP-0.trace.json.gz",
+     "kernels": 80867,
+     "busy_ms": 1551.67,
+     "span_ms": 1134.04,
+     "busy_frac": 1.368,
+     "family_ms": {
+      "moe": 1201.2,
+      "gemm": 107.7,
+      "attention": 95.7,
+      "other": 55.7,
+      "memory": 43.9,
+      "norm_act": 36.6,
+      "sampling": 5.9,
+      "collective": 5.0
+     },
+     "compute_ms": 1546.7,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.004,
+      "p90": 0.004,
+      "max": 0.005
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-1-DP-1-EP-1.trace.json.gz",
+     "kernels": 80751,
+     "busy_ms": 1535.88,
+     "span_ms": 1133.08,
+     "busy_frac": 1.355,
+     "family_ms": {
+      "moe": 1186.1,
+      "gemm": 107.5,
+      "attention": 94.9,
+      "other": 56.2,
+      "memory": 44.2,
+      "norm_act": 36.5,
+      "sampling": 5.7,
+      "collective": 4.8
+     },
+     "compute_ms": 1531.1,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.003,
+      "p90": 0.004,
+      "max": 0.005
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-2-DP-2-EP-2.trace.json.gz",
+     "kernels": 85102,
+     "busy_ms": 1531.6,
+     "span_ms": 1132.29,
+     "busy_frac": 1.353,
+     "family_ms": {
+      "moe": 1087.4,
+      "attention": 143.4,
+      "gemm": 125.8,
+      "other": 65.9,
+      "memory": 48.6,
+      "norm_act": 48.4,
+      "collective": 6.2,
+      "sampling": 5.9
+     },
+     "compute_ms": 1525.4,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.003,
+      "p90": 0.004,
+      "max": 0.028
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-3-DP-3-EP-3.trace.json.gz",
+     "kernels": 81079,
+     "busy_ms": 1551.28,
+     "span_ms": 1132.82,
+     "busy_frac": 1.369,
+     "family_ms": {
+      "moe": 1207.3,
+      "gemm": 106.6,
+      "attention": 93.0,
+      "other": 54.4,
+      "memory": 43.1,
+      "norm_act": 36.5,
+      "sampling": 5.6,
+      "collective": 4.9
+     },
+     "compute_ms": 1546.4,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.004,
+      "p90": 0.004,
+      "max": 0.005
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-4-DP-4-EP-4.trace.json.gz",
+     "kernels": 81016,
+     "busy_ms": 1547.59,
+     "span_ms": 1134.66,
+     "busy_frac": 1.364,
+     "family_ms": {
+      "moe": 1199.9,
+      "gemm": 106.7,
+      "attention": 95.8,
+      "other": 54.9,
+      "memory": 43.2,
+      "norm_act": 36.5,
+      "sampling": 5.7,
+      "collective": 4.9
+     },
+     "compute_ms": 1542.7,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.004,
+      "p90": 0.004,
+      "max": 0.005
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-5-DP-5-EP-5.trace.json.gz",
+     "kernels": 84889,
+     "busy_ms": 1537.87,
+     "span_ms": 1132.48,
+     "busy_frac": 1.358,
+     "family_ms": {
+      "moe": 919.4,
+      "attention": 245.4,
+      "gemm": 157.5,
+      "other": 81.5,
+      "norm_act": 68.2,
+      "memory": 50.0,
+      "collective": 9.5,
+      "sampling": 6.3
+     },
+     "compute_ms": 1528.3,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.004,
+      "p90": 0.005,
+      "max": 0.081
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-6-DP-6-EP-6.trace.json.gz",
+     "kernels": 85147,
+     "busy_ms": 1541.58,
+     "span_ms": 1135.24,
+     "busy_frac": 1.358,
+     "family_ms": {
+      "moe": 1169.7,
+      "gemm": 112.9,
+      "attention": 104.0,
+      "other": 58.1,
+      "memory": 46.5,
+      "norm_act": 39.7,
+      "sampling": 5.7,
+      "collective": 5.0
+     },
+     "compute_ms": 1536.6,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.003,
+      "p90": 0.004,
+      "max": 0.008
+     }
+    },
+    {
+     "file": "1790967850.2947502-TP-7-DP-7-EP-7.trace.json.gz",
+     "kernels": 80946,
+     "busy_ms": 1546.39,
+     "span_ms": 1141.95,
+     "busy_frac": 1.354,
+     "family_ms": {
+      "moe": 1201.3,
+      "gemm": 106.7,
+      "attention": 93.8,
+      "other": 55.0,
+      "memory": 42.7,
+      "norm_act": 36.3,
+      "sampling": 5.7,
+      "collective": 4.8
+     },
+     "compute_ms": 1541.6,
+     "collective_call_ms": {
+      "n": 1372,
+      "p10": 0.003,
+      "p50": 0.003,
+      "p90": 0.004,
+      "max": 0.005
+     }
+    }
+   ],
+   "total_gpu_ms": 12343.86,
+   "compute_ms_by_rank": [
+    1546.7,
+    1531.1,
+    1525.4,
+    1546.4,
+    1542.7,
+    1528.3,
+    1536.6,
+    1541.6
+   ],
+   "compute_imbalance": 1.006,
+   "collective_split": {
+    "matched_calls": 1298,
+    "unmatched_calls": 74,
+    "transfer_ms_per_rank": 4.6,
+    "wait_ms_by_rank": [
+     22.3,
+     15.8,
+     26.7,
+     24.1,
+     8.8,
+     33.0,
+     10.1,
+     7.1
+    ],
+    "by_kernel": {
+     "void deep_gemm::mega_moe_pre_dispatch_kernel<32u, (deep_gemm::MmaKind)2, true>(__nv_bfloat": {
+      "transfer_ms_per_rank": 4.5,
+      "wait_ms_mean_per_rank": 16.9
+     },
+     "_online_combine_kernel": {
+      "transfer_ms_per_rank": 0.2,
+      "wait_ms_mean_per_rank": 1.6
+     }
+    }
+   },
+   "families": {
+    "moe": 0.7431,
+    "attention": 0.0782,
+    "gemm": 0.0755,
+    "other": 0.039,
+    "memory": 0.0293,
+    "norm_act": 0.0274,
+    "sampling": 0.0038,
+    "collective": 0.0037
+   },
+   "top": [
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_mega_moe_impl<9600u, 7168u, 3072u, 384u, 0u, 6u, 192u, 128u, 256u, 32u, 256u, 128u, (deep_gemm::MmaKind)2, 472320u, 7557120u, 6u, 3584u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 2861.77,
+     "share": 0.2318,
+     "count": 427
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 0u, 0u, 48u, 128u, 128u, 1u, 128u, 128u, 128u, 10u, 2u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 2766.87,
+     "share": 0.2241,
+     "count": 24162
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_mega_moe_impl<9600u, 7168u, 3072u, 384u, 0u, 6u, 32u, 128u, 256u, 16u, 128u, 128u, (deep_gemm::MmaKind)2, 472320u, 7557120u, 10u, 3584u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 2475.66,
+     "share": 0.2006,
+     "count": 9272
+    },
+    {
+     "name": "fmhaSm100fKernel_QkvE4m3OBfloat16H512HVPerCta256PagedKvDenseDynamicTokenSparseP1VarSeqQ64Kv128Persistent2CtaKeepsAbForGen",
+     "family": "attention",
+     "ms": 327.58,
+     "share": 0.0265,
+     "count": 9911
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 0u, 0u, 96u, 128u, 128u, 1u, 128u, 128u, 128u, 9u, 2u, 128u, 128u, 2u",
+     "family": "moe",
+     "ms": 232.37,
+     "share": 0.0188,
+     "count": 9424
+    },
+    {
+     "name": "void sglang::per_token_group_quant_flat_kernel<sglang::QuantTrait<__nv_bfloat16, __nv_fp8_e4m3, 128u, true, false, true, false>, true>(sglang::QuantKernelParams)",
+     "family": "gemm",
+     "ms": 180.74,
+     "share": 0.0146,
+     "count": 41294
+    },
+    {
+     "name": "void cublasLt::splitKreduce_kernel<32, 16, int, float, float, float, float, false, float, float, float, true, false, false, false>(cublasLt::cublasSplitKParams<float>, float const*",
+     "family": "gemm",
+     "ms": 175.33,
+     "share": 0.0142,
+     "count": 23773
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 1024u, 4096u, 96u, 128u, 128u, 16u, 128u, 128u, 128u, 9u, 2u, 128u, 1",
+     "family": "moe",
+     "ms": 164.49,
+     "share": 0.0133,
+     "count": 9272
+    },
+    {
+     "name": "void deep_gemm::sm100_paged_mqa_logits<1u, 64u, 128u, 64u, false, true, false, 3u, 5u, 256u, 16u, 128u, 256u, cutlass::float_e4m3_t, float, float, 2u>(unsigned int, unsigned int, u",
+     "family": "attention",
+     "ms": 163.6,
+     "share": 0.0133,
+     "count": 4650
+    },
+    {
+     "name": "mhc_pre_big_fuse_with_norm_tilelang_kernel",
+     "family": "norm_act",
+     "ms": 160.16,
+     "share": 0.013,
+     "count": 18910
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 0u, 0u, 32u, 128u, 128u, 1u, 128u, 128u, 128u, 11u, 2u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 155.23,
+     "share": 0.0126,
+     "count": 9734
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_mega_moe_impl<9600u, 7168u, 3072u, 384u, 0u, 6u, 16u, 128u, 256u, 8u, 128u, 128u, (deep_gemm::MmaKind)2, 472320u, 7557120u, 10u, 3584u, 128u, 128u, 25",
+     "family": "moe",
+     "ms": 154.38,
+     "share": 0.0125,
+     "count": 456
+    },
+    {
+     "name": "mhc_post_tilelang_kernel",
+     "family": "norm_act",
+     "ms": 145.45,
+     "share": 0.0118,
+     "count": 20287
+    },
+    {
+     "name": "void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_put_kernel_impl<at::native::OpaqueType<1> >(at::TensorIterator&, c10::ArrayRef<long",
+     "family": "memory",
+     "ms": 135.01,
+     "share": 0.0109,
+     "count": 19831
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 0u, 0u, 16u, 128u, 128u, 1u, 128u, 128u, 128u, 12u, 2u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 125.94,
+     "share": 0.0102,
+     "count": 10339
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::ConvertToFloat8E4M3fnOp<c10::BFloat16> >(at::TensorIteratorBase&, at::native::ConvertToFl",
+     "family": "other",
+     "ms": 103.39,
+     "share": 0.0084,
+     "count": 9455
+    },
+    {
+     "name": "nvjet_sm100_tss_32x64_64x16_2x2_2cta_h_bz_splitK_TNN",
+     "family": "gemm",
+     "ms": 96.81,
+     "share": 0.0078,
+     "count": 9272
+    },
+    {
+     "name": "void deep_gemm::sm100_tf32_hc_prenorm_gemm_impl<24u, 28672u, 64u, 32u, 64u, 74u, 128u, 12u, 128u, 128u>(unsigned int, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, float*)",
+     "family": "gemm",
+     "ms": 91.34,
+     "share": 0.0074,
+     "count": 19456
+    },
+    {
+     "name": "void sglang::fused_q_norm_rope<__nv_bfloat16, 512l, 64l, long, true>(sglang::FusedQNormRopeParams)",
+     "family": "attention",
+     "ms": 82.42,
+     "share": 0.0067,
+     "count": 9911
+    },
+    {
+     "name": "void sglang::fp8_wo_a_group_major_quant_ue8m0_kernel<__nv_bfloat16, true>(__nv_bfloat16 const*, __nv_fp8_e4m3*, int*, long, int, int, int, long, long)",
+     "family": "gemm",
+     "ms": 81.21,
+     "share": 0.0066,
+     "count": 9455
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 0u, 0u, 128u, 256u, 128u, 1u, 128u, 128u, 128u, 5u, 2u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 76.61,
+     "share": 0.0062,
+     "count": 397
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<8, at::native::ConvertToFloat8E4M3fnOp<c10::BFloat16>, std::array<char*, 2ul> >(int, at::native::ConvertToFloat8E4M3fnOp<c10::BFloat1",
+     "family": "other",
+     "ms": 68.2,
+     "share": 0.0055,
+     "count": 10832
+    },
+    {
+     "name": "void sglang::deepseek_rope_kernel<true, true, long>(sglang::FusedQKRopeParams)",
+     "family": "attention",
+     "ms": 65.89,
+     "share": 0.0053,
+     "count": 9911
+    },
+    {
+     "name": "_router_triton_kernel",
+     "family": "other",
+     "ms": 64.7,
+     "share": 0.0052,
+     "count": 9446
+    },
+    {
+     "name": "nvjet_sm100_tss_64x64_64x16_2x2_2cta_h_bz_splitK_TNT",
+     "family": "gemm",
+     "ms": 64.42,
+     "share": 0.0052,
+     "count": 4621
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_mega_moe_impl<9600u, 7168u, 3072u, 384u, 0u, 6u, 240u, 128u, 256u, 40u, 256u, 128u, (deep_gemm::MmaKind)2, 472320u, 7557120u, 5u, 3584u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 59.81,
+     "share": 0.0048,
+     "count": 61
+    },
+    {
+     "name": "nvjet_sm100_tss_32x64_64x16_4x2_2cta_h_bz_splitK_TNN",
+     "family": "gemm",
+     "ms": 56.62,
+     "share": 0.0046,
+     "count": 9272
+    },
+    {
+     "name": "_fused_norm_rope_kernel",
+     "family": "attention",
+     "ms": 54.9,
+     "share": 0.0044,
+     "count": 19831
+    },
+    {
+     "name": "void deep_gemm::mega_moe_pre_dispatch_kernel<32u, (deep_gemm::MmaKind)2, true>(__nv_bfloat16 const*, int const*, float const*, float const*, void*, int*, float*, long*, float*, uns",
+     "family": "collective",
+     "ms": 43.86,
+     "share": 0.0036,
+     "count": 10216
+    },
+    {
+     "name": "nvjet_sm100_tst_128x80_64x10_2x1_2cta_v_bz_TNT",
+     "family": "gemm",
+     "ms": 42.82,
+     "share": 0.0035,
+     "count": 152
+    },
+    {
+     "name": "void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lambda()#4}::operator()() const::{lamb",
+     "family": "memory",
+     "ms": 42.77,
+     "share": 0.0035,
+     "count": 20774
+    },
+    {
+     "name": "void sglang::topk_main_kernel<true, 3, (sglang::TopKMode)1>(sglang::TopKPagedParams)",
+     "family": "attention",
+     "ms": 40.21,
+     "share": 0.0033,
+     "count": 4560
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 0u, 0u, 240u, 128u, 128u, 1u, 128u, 128u, 128u, 6u, 2u, 128u, 128u, 2",
+     "family": "moe",
+     "ms": 39.42,
+     "share": 0.0032,
+     "count": 123
+    },
+    {
+     "name": "_rmsnorm_fp8_kernel",
+     "family": "gemm",
+     "ms": 33.9,
+     "share": 0.0027,
+     "count": 9272
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::native::(anonymous namespace)::where_kernel_impl(at::TensorIterator&)::{lambda()#1}::operator()()",
+     "family": "other",
+     "ms": 33.46,
+     "share": 0.0027,
+     "count": 9455
+    },
+    {
+     "name": "void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_kernel_impl<at::native::OpaqueType<8> >(at::TensorIteratorBase&, c10::ArrayRef<long",
+     "family": "memory",
+     "ms": 31.58,
+     "share": 0.0026,
+     "count": 10544
+    },
+    {
+     "name": "void flashinfer::sampling::air_top_p::AirTopPRenormRadixKernel<false, float>(flashinfer::sampling::air_top_p::Counter<float>*, std::conditional<false, std::conditional<std::is_same",
+     "family": "attention",
+     "ms": 27.34,
+     "share": 0.0022,
+     "count": 456
+    },
+    {
+     "name": "void sglang::flash_c128_prefill<512l, float, float, float, true>(sglang::Compress128PrefillParams)",
+     "family": "attention",
+     "ms": 27.07,
+     "share": 0.0022,
+     "count": 4805
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<int>, std::array<char*, 1ul> >(int, at::native::FillFunctor<int>, std::array<char*, 1ul>)",
+     "family": "memory",
+     "ms": 26.97,
+     "share": 0.0022,
+     "count": 23140
+    },
+    {
+     "name": "void deep_gemm::sm100_fp8_fp4_gemm_1d1d_impl<(cute::UMMA::Major)0, (cute::UMMA::Major)0, 128u, 128u, 128u, 0u, 1024u, 4096u, 128u, 256u, 128u, 16u, 128u, 128u, 128u, 5u, 2u, 128u, ",
+     "family": "moe",
+     "ms": 26.94,
+     "share": 0.0022,
+     "count": 122
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<8, at::native::AUnaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float> >, std::arra",
+     "family": "other",
+     "ms": 26.04,
+     "share": 0.0021,
+     "count": 9911
+    },
+    {
+     "name": "void sglang::silu_mul_clamp_kernel<__nv_bfloat16, true>(sglang::SiluAndMulClampParams)",
+     "family": "norm_act",
+     "ms": 25.35,
+     "share": 0.0021,
+     "count": 9911
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char*, 3ul> >(int, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<c",
+     "family": "other",
+     "ms": 24.49,
+     "share": 0.002,
+     "count": 9911
+    },
+    {
+     "name": "nvjet_sm100_tst_32x64_64x16_2x2_2cta_h_bz_splitK_TNN",
+     "family": "gemm",
+     "ms": 23.44,
+     "share": 0.0019,
+     "count": 4560
+    },
+    {
+     "name": "void sglang::fused_norm_rope_indexer<float, (sglang::ForwardMode)0, 6, true, 0>(sglang::FusedNormRopeStoreParams)",
+     "family": "attention",
+     "ms": 23.35,
+     "share": 0.0019,
+     "count": 4650
+    },
+    {
+     "name": "void sglang::write_c4_prefill<128l, float, float, float, true>(sglang::Compress4PrefillParams)",
+     "family": "attention",
+     "ms": 22.66,
+     "share": 0.0018,
+     "count": 4650
+    },
+    {
+     "name": "void sglang::fused_q_indexer_rope_hadamard_quant<__nv_bfloat16, int, true, false, true>(sglang::FusedQIndexerRopeHadamardQuantParams)",
+     "family": "attention",
+     "ms": 20.84,
+     "share": 0.0017,
+     "count": 4650
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::AUnaryFunctor<int, int, bool, at::native::(anonymous namespace)::CompareEqFunctor<int> > ",
+     "family": "other",
+     "ms": 20.71,
+     "share": 0.0017,
+     "count": 9455
+    },
+    {
+     "name": "nvjet_sm100_tst_128x16_64x12_2x1_2cta_v_bz_TNT",
+     "family": "gemm",
+     "ms": 19.32,
+     "share": 0.0016,
+     "count": 760
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lamb",
+     "family": "memory",
+     "ms": 19.11,
+     "share": 0.0015,
+     "count": 9455
+    },
+    {
+     "name": "void sglang::flash_c4_prefill<512l, float, float, float, true>(sglang::Compress4PrefillParams)",
+     "family": "attention",
+     "ms": 18.73,
+     "share": 0.0015,
+     "count": 4650
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::(anonymous namespace)::where_kernel_impl(at::TensorIterator&)::{lambda()#1}::operator()() const::{lambda()#3}::operato",
+     "family": "other",
+     "ms": 18.02,
+     "share": 0.0015,
+     "count": 9607
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char*, 2ul> >(int, at::native::CUDAFunctorOnSelf_add<int>, std::array<char*, 2u",
+     "family": "other",
+     "ms": 17.92,
+     "share": 0.0015,
+     "count": 14575
+    },
+    {
+     "name": "void sglang::flash_c4_prefill<128l, float, float, float, true>(sglang::Compress4PrefillParams)",
+     "family": "attention",
+     "ms": 17.44,
+     "share": 0.0014,
+     "count": 4650
+    },
+    {
+     "name": "sglang::mask_topk_ids_padded_region(sglang::TopKParams)",
+     "family": "sampling",
+     "ms": 16.5,
+     "share": 0.0013,
+     "count": 9911
+    },
+    {
+     "name": "void at::native::(anonymous namespace)::cunn_SoftMaxForward<4, float, float, float, at::native::(anonymous namespace)::SoftMaxForwardEpilogue>(float*, float const*, int)",
+     "family": "sampling",
+     "ms": 16.41,
+     "share": 0.0013,
+     "count": 155
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<2, at::native::(anonymous namespace)::where_kernel_impl(at::TensorIterator&)::{lambda()#1}::operator()() const::{lambda()#4}::operato",
+     "family": "other",
+     "ms": 14.92,
+     "share": 0.0012,
+     "count": 9455
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<8, at::native::ConvertToFloat8E4M3fnOp<float>, std::array<char*, 2ul> >(int, at::native::ConvertToFloat8E4M3fnOp<float>, std::array<c",
+     "family": "other",
+     "ms": 14.83,
+     "share": 0.0012,
+     "count": 9455
+    },
+    {
+     "name": "void at::native::vectorized_elementwise_kernel<2, at::native::FillFunctor<long>, std::array<char*, 1ul> >(int, at::native::FillFunctor<long>, std::array<char*, 1ul>)",
+     "family": "memory",
+     "ms": 14.0,
+     "share": 0.0011,
+     "count": 10747
+    },
+    {
+     "name": "void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::native::AUnaryFunctor<int, int, int, at::native::BitwiseAndFunctor<int> > >(at::TensorIteratorBas",
+     "family": "other",
+     "ms": 13.88,
+     "share": 0.0011,
+     "count": 9455
+    }
+   ]
+  }
+ },
+ "dp_peak_running": {
+  "0": 23,
+  "1": 20,
+  "2": 24,
+  "3": 21,
+  "4": 24,
+  "5": 21,
+  "6": 22,
+  "7": 21
+ },
+ "numinous_log": [
+  "[2026-10-02 18:33:49 DP2 TP2 EP2] numinous fp8_lm_head active (head (129280, 7168) quantized to FP8 128x128 UE8M0, DeepGEMM logits)",
+  "Capturing batches (bs=20 avail_mem=10.08 GB):  48%|\u2588\u2588\u2588\u2588\u258a     | 13/27 [04:29<00:31,  2.25s/it][2026-10-02 18:45:34 DP3 TP3 EP3] numinous norm_quant active (q_norm + FP8 UE8M0 quant in one kernel, shared by wq_b and indexer wq_b)",
+  "[2026-10-02 18:48:00 DP2 TP2 EP2] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-10-02 18:48:57 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [8147, 8192, 8192, 8192, 8192, 8192, 8036, 8192], rank rows 8147 -> 8167"
+ ],
+ "spec_acceptance": {
+  "samples": 600,
+  "accept_len_mean": 4.282,
+  "accept_len_p10": 3.81,
+  "accept_len_p50": 4.28,
+  "accept_len_p90": 4.73,
+  "accept_rate_mean": 0.656
+ }
+}

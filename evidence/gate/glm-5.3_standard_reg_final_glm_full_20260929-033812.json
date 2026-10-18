@@ -1,0 +1,332 @@
+{
+ "cell": "glm-5.3/standard",
+ "arm": "final_glm_full",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ],
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "series": "sglang-v0.5.20"
+   }
+  ],
+  "overlay": {
+   "operations/kernels/numinous_moe_tactics.py": "srt/layers/moe/numinous_moe_tactics.py",
+   "operations/kernels/moe_tactics/pro_mxfp4_b200.json": "srt/layers/moe/moe_tactics/pro_mxfp4_b200.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_b300.json": "srt/layers/moe/moe_tactics/pro_mxfp4_b300.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_ep8_b200.json": "srt/layers/moe/moe_tactics/pro_mxfp4_ep8_b200.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_ep8_b300.json": "srt/layers/moe/moe_tactics/pro_mxfp4_ep8_b300.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_fs_b200.json": "srt/layers/moe/moe_tactics/pro_mxfp4_fs_b200.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_fs_b300.json": "srt/layers/moe/moe_tactics/pro_mxfp4_fs_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep8_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep8_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep8_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep8_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_tp4_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_tp4_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_tp4_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_tp4_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep4_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep4_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep4_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep4_b300.json",
+   "operations/patches/sglang_numinous_hooks.py": "!run tactics",
+   "operations/kernels/numinous_dp_moe_nvfp4.py": "srt/layers/moe/numinous_dp_moe_nvfp4.py",
+   "operations/kernels/numinous_dp_moe.py": "srt/layers/moe/numinous_dp_moe.py",
+   "operations/kernels/symm_collectives.py": "srt/layers/moe/symm_collectives.py",
+   "operations/patches/glm_dpmoe_hooks.py": "!run",
+   "operations/patches/glm_tp1_shared_hooks.py": "!run"
+  },
+  "env": {
+   "NUMINOUS_DP_MOE": "1",
+   "SGLANG_SHARED_EXPERT_TP1": "1"
+  },
+  "flags_add": [
+   "--moe-runner-backend",
+   "flashinfer_trtllm",
+   "--speculative-moe-runner-backend",
+   "auto",
+   "--model-path",
+   "/cache/derived/GLM-5.3-NVFP4-FP8attn",
+   "--disable-shared-experts-fusion",
+   "--speculative-num-steps",
+   "5",
+   "--speculative-eagle-topk",
+   "1",
+   "--speculative-num-draft-tokens",
+   "6"
+  ],
+  "flags_remove": [
+   "--quantization",
+   "--speculative-num-steps",
+   "--speculative-eagle-topk",
+   "--speculative-num-draft-tokens"
+  ],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/glm-5.3_standard_20260929-000515",
+  "_acc_control": "final_glm_control"
+ },
+ "config_digest": "bb63bb89e3874dd5",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-attention-local-control-broadcast",
+  "--enable-dp-lm-head",
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--chunked-prefill-size",
+  "16384",
+  "--enable-prefill-delayer",
+  "--mem-fraction-static",
+  "0.90",
+  "--cuda-graph-max-bs-decode",
+  "48",
+  "--max-running-requests",
+  "512",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--reasoning-parser",
+  "glm45",
+  "--tool-call-parser",
+  "glm47",
+  "--num-continuous-decode-steps",
+  "8",
+  "--moe-runner-backend",
+  "flashinfer_trtllm",
+  "--speculative-moe-runner-backend",
+  "auto",
+  "--model-path",
+  "/cache/derived/GLM-5.3-NVFP4-FP8attn",
+  "--disable-shared-experts-fusion",
+  "--speculative-num-steps",
+  "5",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "6"
+ ],
+ "ladder": [
+  64,
+  96
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_t8_300.json",
+ "started": "2026-09-29T00:44:42Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 43.77,
+   "warm_agg_out_tok_s": 1098.5,
+   "steady_agg_out_tok_s": 1518.7,
+   "ttft_p90_s": 5.87,
+   "ttft_p99_s": 8.77,
+   "ttft_max_s": 11.66,
+   "turn_wall_p50_s": 7.9,
+   "turn_wall_p90_s": 15.25,
+   "turn_wall_p99_s": 21.93,
+   "tail_last10pct_s": 25.8,
+   "warm_session_rate_sum": 1759.8,
+   "warm_ttft_p50_s": 2.46,
+   "hit_rate": 0.9627,
+   "mean_prompt_tokens": 92950,
+   "mean_out_tokens": 248.5,
+   "accept_len": 3.91
+  },
+  {
+   "repeat": 0,
+   "sessions": 96,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 27.55,
+   "warm_agg_out_tok_s": 1153.3,
+   "steady_agg_out_tok_s": 1533.1,
+   "ttft_p90_s": 8.37,
+   "ttft_p99_s": 12.84,
+   "ttft_max_s": 15.42,
+   "turn_wall_p50_s": 13.14,
+   "turn_wall_p90_s": 25.35,
+   "turn_wall_p99_s": 39.27,
+   "tail_last10pct_s": 36.4,
+   "warm_session_rate_sum": 1697.9,
+   "warm_ttft_p50_s": 3.6,
+   "hit_rate": 0.9598,
+   "mean_prompt_tokens": 96201,
+   "mean_out_tokens": 258.3,
+   "accept_len": 3.91
+  },
+  {
+   "repeat": 1,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 44.49,
+   "warm_agg_out_tok_s": 1154.4,
+   "steady_agg_out_tok_s": 1506.5,
+   "ttft_p90_s": 5.53,
+   "ttft_p99_s": 10.03,
+   "ttft_max_s": 11.49,
+   "turn_wall_p50_s": 7.42,
+   "turn_wall_p90_s": 15.94,
+   "turn_wall_p99_s": 24.73,
+   "tail_last10pct_s": 23.1,
+   "warm_session_rate_sum": 1732.3,
+   "warm_ttft_p50_s": 2.42,
+   "hit_rate": 0.9627,
+   "mean_prompt_tokens": 92950,
+   "mean_out_tokens": 247.9,
+   "accept_len": 3.83
+  },
+  {
+   "repeat": 1,
+   "sessions": 96,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 28.16,
+   "warm_agg_out_tok_s": 1149.8,
+   "steady_agg_out_tok_s": 1433.9,
+   "ttft_p90_s": 9.17,
+   "ttft_p99_s": 15.82,
+   "ttft_max_s": 66.5,
+   "turn_wall_p50_s": 13.63,
+   "turn_wall_p90_s": 25.68,
+   "turn_wall_p99_s": 38.84,
+   "tail_last10pct_s": 28.5,
+   "warm_session_rate_sum": 1648.8,
+   "warm_ttft_p50_s": 3.94,
+   "hit_rate": 0.9598,
+   "mean_prompt_tokens": 96201,
+   "mean_out_tokens": 256.5,
+   "accept_len": 3.88
+  }
+ ],
+ "booted": true,
+ "boot_min": 17.8,
+ "kv_pool_tokens": [
+  1823808
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-ac5abd1e-868a-922b-0270-ab03cd41d89b",
+   "GPU-b67a4804-4663-566e-caae-861084579258",
+   "GPU-873bb3ed-53b2-fb1c-c9f7-9df7080d3e69",
+   "GPU-4bf84093-4dff-ed14-ca07-1924483e148f",
+   "GPU-ee420482-39bb-34fa-5575-b5f9005dc73e",
+   "GPU-9c63e696-e2b2-0c1c-7052-342351a84780",
+   "GPU-2c89fa5f-d811-d618-9324-a628f4fb42a0",
+   "GPU-4094bce2-6627-f657-ade0-f75834e3c616"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/glm-5.3_standard_20260929-000515/accuracy_final_glm_full.json",
+  "seconds": 92.2,
+  "prompts_source": "sessions:real_sessions_t8_300.json",
+  "gsm8k_acc": 0.955,
+  "verdict": {
+   "pass": false,
+   "checks": {
+    "inputs_identical": true,
+    "kl_mean": false,
+    "kl_p99": false,
+    "top1_agree": false,
+    "dlp_p99": false,
+    "em_paired": true
+   },
+   "thresholds": {
+    "kl_mean_max": 0.01,
+    "kl_p99_max": 0.25,
+    "top1_agree_min": 0.97,
+    "dlp_p99_max": 0.5,
+    "em_drop_max_pts": 2.0,
+    "em_p_max": 0.1,
+    "em_drop_hard_pts": 5.0
+   },
+   "within_noise": null,
+   "noise_given": false,
+   "tf_skipped": false,
+   "note": null
+  },
+  "metrics": {
+   "tf": {
+    "prompts": 200,
+    "positions": 51200,
+    "mismatched_prompts": [],
+    "kl_mean": 0.18431590241748044,
+    "kl_p99": 3.870108722977644,
+    "kl_max": 15.147534035831614,
+    "top1_agree": 0.8963671875,
+    "dlp_mean": 0.29707177970703125,
+    "dlp_p99": 4.947842140000007,
+    "dlp_max": 19.030204
+   },
+   "em": {
+    "items": 200,
+    "acc_control": 0.965,
+    "acc_arm": 0.955,
+    "drop_pts": 1.0000000000000009,
+    "control_only_correct": 4,
+    "arm_only_correct": 2,
+    "answer_changed": 11,
+    "mcnemar_p_arm_worse": 0.34375
+   }
+  }
+ },
+ "sessions_dropped_oversize": 9,
+ "dp_peak_running": {
+  "0": 11,
+  "1": 12,
+  "2": 11,
+  "3": 11,
+  "4": 11,
+  "5": 11,
+  "6": 11,
+  "7": 11
+ },
+ "numinous_log": [
+  "[2026-09-29 00:54:03 DP6 TP6] numinous_dp_moe_nvfp4: no MoE layer of GlmMoeDsaForCausalLM is covered (the NVFP4 method is not on its TRT-LLM FP4 path (no g1_scale_c))",
+  "Multi-thread loading shards:  88% Completed | 45/51 [02:22<00:02,  2.90it/s][2026-09-29 00:56:44 DP1 TP1] numinous_dp_moe_nvfp4: no MoE layer of GlmMoeDsaForCausalLMNextN is covered (experts use UnquantizedFusedMoEMethod, not ModelOptNvFp4FusedMoEMethod)",
+  "[2026-09-29 00:58:46 DP6 TP6] numinous_dp_moe_nvfp4 declined: mlp is DeepseekV2MLP, not DeepseekV2MoE",
+  "[2026-09-29 00:58:59 DP3 TP3] numinous_dp_moe_nvfp4 active: fused DP-MoE (NVFP4 payload) serves the MoE layers",
+  "/sgl-workspace/sglang/python/sglang/srt/layers/moe/numinous_dp_moe_nvfp4.py:173: FutureWarning: `enable_symm_mem_for_group` is deprecated. There is no need to call this function anymore.",
+  "Capturing num tokens (num_tokens=2048 avail_mem=18.79 GB):   0%|          | 0/42 [00:00<?, ?it/s][2026-09-29 01:00:42 DP6 TP6] numinous_moe_tactics: 7 tables for b200: [('glm', 'tp8', 41), ('glm', 'ep4', 41), ('glm', 'ep8', 41), ('glm', 'tp4', 41), ('pro', 'tp8', 41), ('pro', 'ep8', 41), ('pro', 'fs', 41)]",
+  "[2026-09-29 01:00:42 DP3 TP3] numinous_moe_tactics active: glm/tp8 tactic [256, 4] for 16384 tokens (sm100)",
+  "[2026-09-29 01:01:50 DP0 TP0] numinous_dp_moe_nvfp4 declined: experts use UnquantizedFusedMoEMethod, not ModelOptNvFp4FusedMoEMethod"
+ ],
+ "spec_acceptance": {
+  "samples": 561,
+  "accept_len_mean": 3.971,
+  "accept_len_p10": 3.14,
+  "accept_len_p50": 4.06,
+  "accept_len_p90": 4.63,
+  "accept_rate_mean": 0.594
+ },
+ "probes": {
+  "score": "5/6",
+  "per_probe": [
+   1,
+   1,
+   0,
+   1,
+   1,
+   1
+  ],
+  "misses": [
+   {
+    "probe": 2,
+    "expect": "The foundry poured 950 tonnes of grey iron in the second quarter and 484 tonnes in the third.",
+    "said": "The user wants me to repeat sentence 676 exactly, then state every number in it as a comma-separated list.\n\nLet me find sentence 676:\n\n\"676. Route 381 carries about 301 thousand vehicles a day; the bypass carries 431 thousand.\"\n\nSo the sentence is: \"Route 381 carries about 301 thousand vehicles a da"
+   }
+  ]
+ }
+}

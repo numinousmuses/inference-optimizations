@@ -1,0 +1,220 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "v20_megamoe_w4a4_bal+v20_fp8_lm_head",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/pro_small_kernel_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_FP8_LM_HEAD": "1"
+  },
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20260928-083754",
+  "_acc_control": "v20_megamoe_w4a4_bal"
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--chunked-prefill-size",
+  "32768",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-28T08:38:52Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 45.97,
+   "warm_agg_out_tok_s": 1471.8,
+   "steady_agg_out_tok_s": 1942.5,
+   "ttft_p90_s": 3.48,
+   "ttft_p99_s": 6.37,
+   "ttft_max_s": 7.39,
+   "turn_wall_p50_s": 5.77,
+   "turn_wall_p90_s": 12.34,
+   "turn_wall_p99_s": 16.31,
+   "tail_last10pct_s": 13.7,
+   "warm_session_rate_sum": 2149.9,
+   "warm_ttft_p50_s": 1.21,
+   "hit_rate": 0.9372,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 232.0,
+   "accept_len": 4.21
+  },
+  {
+   "repeat": 0,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 27.23,
+   "warm_agg_out_tok_s": 2114.9,
+   "steady_agg_out_tok_s": 2592.2,
+   "ttft_p90_s": 4.53,
+   "ttft_p99_s": 8.73,
+   "ttft_max_s": 14.25,
+   "turn_wall_p50_s": 9.77,
+   "turn_wall_p90_s": 19.29,
+   "turn_wall_p99_s": 24.87,
+   "tail_last10pct_s": 14.6,
+   "warm_session_rate_sum": 2898.0,
+   "warm_ttft_p50_s": 1.64,
+   "hit_rate": 0.9385,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 255.0,
+   "accept_len": 4.34
+  },
+  {
+   "repeat": 1,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 42.77,
+   "warm_agg_out_tok_s": 1510.6,
+   "steady_agg_out_tok_s": 1861.6,
+   "ttft_p90_s": 4.04,
+   "ttft_p99_s": 6.75,
+   "ttft_max_s": 8.39,
+   "turn_wall_p50_s": 6.51,
+   "turn_wall_p90_s": 12.37,
+   "turn_wall_p99_s": 16.54,
+   "tail_last10pct_s": 10.9,
+   "warm_session_rate_sum": 2068.7,
+   "warm_ttft_p50_s": 1.25,
+   "hit_rate": 0.9371,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 235.2,
+   "accept_len": 4.29
+  },
+  {
+   "repeat": 1,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 28.68,
+   "warm_agg_out_tok_s": 2102.9,
+   "steady_agg_out_tok_s": 2662.5,
+   "ttft_p90_s": 4.54,
+   "ttft_p99_s": 7.74,
+   "ttft_max_s": 10.52,
+   "turn_wall_p50_s": 9.98,
+   "turn_wall_p90_s": 19.33,
+   "turn_wall_p99_s": 25.59,
+   "tail_last10pct_s": 16.6,
+   "warm_session_rate_sum": 2902.3,
+   "warm_ttft_p50_s": 1.82,
+   "hit_rate": 0.9386,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 249.7,
+   "accept_len": 4.34
+  }
+ ],
+ "booted": true,
+ "boot_min": 13.6,
+ "kv_pool_tokens": [
+  1404160
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-9601b897-65bd-a020-e13e-a1cfe5159c4d",
+   "GPU-38364c68-a5fa-e6e7-f029-c9aa3cd85de3",
+   "GPU-21e97fe5-5c17-7087-7bb6-abe40f33a030",
+   "GPU-daacae57-c373-0b46-3d08-f58f2cea80e1",
+   "GPU-7e58c8f2-89dc-b594-6042-d04e83e3d76e",
+   "GPU-c77207a6-e505-8ebc-63d0-73ddbe43aa97",
+   "GPU-96ad03a0-b028-f734-d6cd-5d3bd50ee486",
+   "GPU-915e906b-f585-ddde-0da7-680ac2184251"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/deepseek-v4-pro_standard_20260928-083754/accuracy_v20_megamoe_w4a4_bal+v20_fp8_lm_head.json",
+  "seconds": 66.5,
+  "prompts_source": "sessions:real_sessions_dsv4_46k_t8_420.json",
+  "gsm8k_acc": 0.975
+ },
+ "sessions_dropped_oversize": 14,
+ "dp_peak_running": {
+  "0": 23,
+  "1": 20,
+  "2": 24,
+  "3": 20,
+  "4": 24,
+  "5": 21,
+  "6": 22,
+  "7": 21
+ },
+ "numinous_log": [
+  "[2026-09-28 08:43:22 DP6 TP6 EP6] numinous fp8_lm_head active (head (129280, 7168) quantized to FP8 128x128 UE8M0, DeepGEMM logits)",
+  "[2026-09-28 08:52:24 DP3 TP3 EP3] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-28 08:53:02 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [4051, 4096, 4096, 4096, 4096, 4096, 4096, 4096], rank rows 4051 -> 4091"
+ ],
+ "spec_acceptance": {
+  "samples": 404,
+  "accept_len_mean": 4.316,
+  "accept_len_p10": 3.84,
+  "accept_len_p50": 4.33,
+  "accept_len_p90": 4.78,
+  "accept_rate_mean": 0.663
+ },
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ }
+}

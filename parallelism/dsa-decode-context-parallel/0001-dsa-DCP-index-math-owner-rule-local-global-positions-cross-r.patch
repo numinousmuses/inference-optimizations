@@ -1,0 +1,169 @@
+From 39068d9ac38540e363b123daf95fa4d28f36d2c4 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Mon, 21 Sep 2026 22:05:49 +0000
+Subject: [PATCH] dsa: DCP index math (owner rule, local/global positions,
+ cross-rank top-k merge, owned-slot filtering) with tests; the executable
+ specification for decode context parallel on the sparse attention backend
+
+---
+ .../srt/layers/attention/dsa/dcp_topk.py      | 80 +++++++++++++++++++
+ test/numinous/test_dcp_topk.py                | 60 ++++++++++++++
+ 2 files changed, 140 insertions(+)
+ create mode 100644 python/sglang/srt/layers/attention/dsa/dcp_topk.py
+ create mode 100644 test/numinous/test_dcp_topk.py
+
+diff --git a/python/sglang/srt/layers/attention/dsa/dcp_topk.py b/python/sglang/srt/layers/attention/dsa/dcp_topk.py
+new file mode 100644
+index 000000000..3561c3c82
+--- /dev/null
++++ b/python/sglang/srt/layers/attention/dsa/dcp_topk.py
+@@ -0,0 +1,80 @@
++"""Numinous: index math for decode context parallel (DCP) on the DeepSeek sparse attention (DSA) path.
++
++Under DCP with size S, token position p lives on rank p % S at local slot p // S (the owner rule SGLang's dense-MLA
++DCP already uses, layers/dcp/layout.py). The DSA indexer scores every token of a request and keeps the top-k; with
++sharded keys each rank can only score its own tokens, so the selection becomes:
++
++    local scores over local slots  ->  local top-k with global positions
++    -> all-gather (S x k) candidates -> global top-k -> each rank keeps the candidates it owns, as local slots
++
++Everything here is plain torch so it is unit-tested on CPU; the kernels that consume the outputs are the existing
++FlashMLA sparse kernels, which accept -1 for absent entries.
++"""
++from __future__ import annotations
++
++import torch
++
++
++def local_to_global(local_idx: torch.Tensor, dcp_size: int, dcp_rank: int) -> torch.Tensor:
++    """Global positions of this rank's local slots. -1 stays -1."""
++    out = local_idx * dcp_size + dcp_rank
++    return torch.where(local_idx < 0, torch.full_like(out, -1), out)
++
++
++def global_to_local_owned(global_idx: torch.Tensor, dcp_size: int, dcp_rank: int) -> torch.Tensor:
++    """Local slots for the positions this rank owns; every other entry becomes -1. Shape preserved."""
++    owned = (global_idx >= 0) & (global_idx % dcp_size == dcp_rank)
++    return torch.where(owned, global_idx // dcp_size, torch.full_like(global_idx, -1))
++
++
++def merge_topk(candidate_scores: torch.Tensor, candidate_pos: torch.Tensor, k: int) -> tuple[torch.Tensor, torch.Tensor]:
++    """Global top-k from the gathered candidates.
++
++    candidate_scores: [B, S*k] float, candidate_pos: [B, S*k] int64 with -1 for padding (scored as -inf).
++    Returns (scores [B, k], positions [B, k]) sorted by score descending, -1 where fewer than k valid candidates.
++    """
++    scores = torch.where(candidate_pos >= 0, candidate_scores, torch.full_like(candidate_scores, float("-inf")))
++    top_s, top_i = torch.topk(scores, k=min(k, scores.shape[-1]), dim=-1)
++    top_p = torch.gather(candidate_pos, -1, top_i)
++    top_p = torch.where(torch.isfinite(top_s), top_p, torch.full_like(top_p, -1))
++    if top_p.shape[-1] < k:  # fewer candidates than k: pad
++        pad = k - top_p.shape[-1]
++        top_p = torch.cat([top_p, torch.full((top_p.shape[0], pad), -1, dtype=top_p.dtype)], dim=-1)
++        top_s = torch.cat([top_s, torch.full((top_s.shape[0], pad), float("-inf"), dtype=top_s.dtype)], dim=-1)
++    return top_s, top_p
++
++
++def compact_owned(local_idx: torch.Tensor) -> torch.Tensor:
++    """Move valid (>= 0) entries to the front of each row, -1 after them. Kernels that iterate a contiguous
++    prefix of selected tokens want this; kernels that mask -1 natively do not need it."""
++    valid = local_idx >= 0
++    order = torch.argsort((~valid).to(torch.int8), dim=-1, stable=True)
++    return torch.gather(local_idx, -1, order)
++
++
++def reference_topk_global(scores_full: torch.Tensor, k: int) -> torch.Tensor:
++    """What a single rank holding every token would select: positions of the top-k scores. For tests."""
++    return torch.topk(scores_full, k=min(k, scores_full.shape[-1]), dim=-1).indices
++
++
++def select_dcp(scores_full: torch.Tensor, k: int, dcp_size: int) -> list[torch.Tensor]:
++    """Simulate the whole DCP selection on one device: returns each rank's owned local slots [B, k] (with -1).
++
++    Used by the tests to prove the sharded selection reproduces the single-rank top-k set exactly, and as the
++    executable specification for the GPU implementation.
++    """
++    B, T = scores_full.shape
++    cands_s, cands_p = [], []
++    for r in range(dcp_size):
++        local = scores_full[:, r::dcp_size]                               # this rank's tokens, in local-slot order
++        kk = min(k, local.shape[-1])
++        s, i = torch.topk(local, k=kk, dim=-1)
++        p = local_to_global(i, dcp_size, r)
++        if kk < k:
++            s = torch.cat([s, torch.full((B, k - kk), float("-inf"), dtype=s.dtype)], dim=-1)
++            p = torch.cat([p, torch.full((B, k - kk), -1, dtype=p.dtype)], dim=-1)
++        cands_s.append(s)
++        cands_p.append(p)
++    gathered_s, gathered_p = torch.cat(cands_s, dim=-1), torch.cat(cands_p, dim=-1)  # the all-gather
++    _, top_p = merge_topk(gathered_s, gathered_p, k)
++    return [compact_owned(global_to_local_owned(top_p, dcp_size, r)) for r in range(dcp_size)]
+diff --git a/test/numinous/test_dcp_topk.py b/test/numinous/test_dcp_topk.py
+new file mode 100644
+index 000000000..88d6c5707
+--- /dev/null
++++ b/test/numinous/test_dcp_topk.py
+@@ -0,0 +1,60 @@
++import sys, pathlib
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "python"))
++import torch  # noqa: E402
++from sglang.srt.layers.attention.dsa.dcp_topk import (  # noqa: E402
++    compact_owned, global_to_local_owned, local_to_global, merge_topk, reference_topk_global, select_dcp,
++)
++
++
++def test_owner_rule_roundtrip():
++    S = 8
++    for r in range(S):
++        loc = torch.arange(0, 50)
++        g = local_to_global(loc, S, r)
++        assert torch.all(g % S == r)
++        back = global_to_local_owned(g, S, r)
++        assert torch.equal(back, loc)
++        other = global_to_local_owned(g, S, (r + 1) % S)
++        assert torch.all(other == -1)
++    assert local_to_global(torch.tensor([-1, 3]), S, 2).tolist() == [-1, 26]
++
++
++def test_merge_topk_ignores_padding_and_sorts():
++    s = torch.tensor([[0.1, 0.9, 0.5, 0.7]])
++    p = torch.tensor([[10, 11, -1, 13]])
++    ts, tp = merge_topk(s, p, 3)
++    assert tp.tolist() == [[11, 13, 10]]
++    ts, tp = merge_topk(s, p, 5)
++    assert tp.tolist() == [[11, 13, 10, -1, -1]] and ts.shape[-1] == 5
++
++
++def test_compact_owned_moves_valid_first():
++    x = torch.tensor([[-1, 4, -1, 2], [7, -1, -1, -1]])
++    assert compact_owned(x).tolist() == [[4, 2, -1, -1], [7, -1, -1, -1]]
++
++
++def test_sharded_selection_matches_single_rank_topk():
++    torch.manual_seed(3)
++    B, T, k, S = 4, 96_000, 2048, 8
++    scores = torch.randn(B, T)
++    owned = select_dcp(scores, k, S)
++    ref = reference_topk_global(scores, k)
++    for b in range(B):
++        union = set()
++        for r in range(S):
++            loc = owned[r][b]
++            loc = loc[loc >= 0]
++            union |= set(local_to_global(loc, S, r).tolist())
++        assert union == set(ref[b].tolist()), f"row {b}: sharded selection differs from the single-rank top-k"
++        assert sum(int((owned[r][b] >= 0).sum()) for r in range(S)) == k
++
++
++def test_short_context_fewer_than_k_tokens():
++    torch.manual_seed(1)
++    B, T, k, S = 2, 500, 2048, 8
++    scores = torch.randn(B, T)
++    owned = select_dcp(scores, k, S)
++    total = sum(int((owned[r] >= 0).sum()) for r in range(S))
++    assert total == B * T                     # every token selected, none duplicated
++    for r in range(S):
++        assert owned[r].shape == (B, k)       # kernels see a fixed width with -1 padding
+-- 
+2.50.1 (Apple Git-155)
+

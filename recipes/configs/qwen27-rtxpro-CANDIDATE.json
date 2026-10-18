@@ -1,0 +1,48 @@
+{
+ "model": "unsloth/Qwen3.8-27B-NVFP4 (community; QUALITY GATE PENDING) over Qwen/Qwen3.8-27B-FP8 incumbent",
+ "silicon": "RTX PRO 6000 Blackwell (SM120)",
+ "status": "pod2 confirm is the only remaining gate before GREEN",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--mem-fraction-static",
+  "0.85",
+  "--attention-backend",
+  "flashinfer",
+  "--chunked-prefill-size",
+  "8192",
+  "--mamba-ssm-dtype",
+  "bfloat16",
+  "--reasoning-parser",
+  "qwen3",
+  "--tool-call-parser",
+  "qwen3_coder",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--enable-linear-replayssm-spec",
+  "--max-mamba-cache-size",
+  "340",
+  "--max-running-requests",
+  "72"
+ ],
+ "measured": {
+  "8k_b64": "",
+  "8k_b24": "2,206@91.9 (speed tier +31%)",
+  "65k_b19": "956.9@50.4 (+65% agg; slots right-sized to 120 for the 65k shape)",
+  "curve": "b72/b80 DOWN-turn - b64 measured optimum",
+  "chunk": "8192 sweet spot; 131k prefill collapse = full-attn quadratic physics (TTFT tiers stand)"
+ },
+ "rules": [
+  "dense+GDN: bf16 ssm states strictly dominate fp32 (+10% and +pool)",
+  "EAGLE replay states = conc x5 + margin; right-size per context shape",
+  "community NVFP4 exports may ship eagle heads - always try before assuming",
+  "mrr fences hide batch curves - always measure past the incumbent's cap"
+ ],
+ "evidence": "numinous-inference/research/gpu-evidence/qwen_rtxpro.json (13 arms)"
+}

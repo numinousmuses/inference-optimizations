@@ -1,0 +1,111 @@
+{
+ "acc_dir": "/cache/accuracy/gemma-4-26b-a4b_standard_20260928-162728",
+ "control": "v20_stock",
+ "control_found": true,
+ "arms": {
+  "gemma_standard_v20": {
+   "control": "v20_stock",
+   "arm": "gemma_standard_v20",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.23853385878164324,
+     "kl_p99": 5.21793171683433,
+     "kl_max": 24.00559256576142,
+     "top1_agree": 0.9187109375,
+     "dlp_mean": 0.4470259407421875,
+     "dlp_p99": 6.798874580000015,
+     "dlp_max": 32.07855
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.95,
+     "acc_arm": 0.95,
+     "drop_pts": 0.0,
+     "control_only_correct": 3,
+     "arm_only_correct": 3,
+     "answer_changed": 10,
+     "mcnemar_p_arm_worse": 0.65625
+    }
+   },
+   "verdict": {
+    "pass": false,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": false,
+     "kl_p99": false,
+     "top1_agree": false,
+     "dlp_p99": false,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.01,
+     "kl_p99_max": 0.25,
+     "top1_agree_min": 0.97,
+     "dlp_p99_max": 0.5,
+     "em_drop_max_pts": 2.0,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": null,
+    "noise_given": false,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "gemma_fp8_attn": {
+   "control": "v20_stock",
+   "arm": "gemma_fp8_attn",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.28736571245204784,
+     "kl_p99": 6.102976974431726,
+     "kl_max": 31.238192641052283,
+     "top1_agree": 0.90853515625,
+     "dlp_mean": 0.5042299052734375,
+     "dlp_p99": 7.5146314599999995,
+     "dlp_max": 25.444585
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.95,
+     "acc_arm": 0.935,
+     "drop_pts": 1.4999999999999902,
+     "control_only_correct": 6,
+     "arm_only_correct": 3,
+     "answer_changed": 14,
+     "mcnemar_p_arm_worse": 0.25390625
+    }
+   },
+   "verdict": {
+    "pass": false,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": false,
+     "kl_p99": false,
+     "top1_agree": false,
+     "dlp_p99": false,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.01,
+     "kl_p99_max": 0.25,
+     "top1_agree_min": 0.97,
+     "dlp_p99_max": 0.5,
+     "em_drop_max_pts": 2.0,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": null,
+    "noise_given": false,
+    "tf_skipped": false,
+    "note": null
+   }
+  }
+ }
+}

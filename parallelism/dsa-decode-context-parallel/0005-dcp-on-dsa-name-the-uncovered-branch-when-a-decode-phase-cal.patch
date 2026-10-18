@@ -1,0 +1,39 @@
+From 6cbab3863b4adf35f50fb9092efec06a03707795 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 01:28:50 +0000
+Subject: [PATCH] dcp on dsa: name the uncovered branch when a decode-phase
+ call returns a bare tensor
+
+---
+ python/sglang/srt/layers/attention/dsa_backend.py | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index a533c1f3e..ba35af1b3 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2196,6 +2196,21 @@ class DeepseekSparseAttnBackend(
+                 f"Unsupported {dsa_impl = } for forward_extend. Consider using an other attention backend."
+             )
+ 
++    def forward(self, q, k, v, layer, forward_batch, save_kv_cache=True, **kwargs):
++        out = super().forward(q, k, v, layer, forward_batch, save_kv_cache, **kwargs)
++        if get_parallel().dcp_enabled and not forward_batch.forward_mode.is_idle():
++            # Numinous DCP: every decode-phase call must hand (o, lse) to the cross-rank merge. A bare tensor here
++            # means a branch of this backend was reached that the DCP port does not cover yet; say which.
++            is_decode_phase = forward_batch.forward_mode.is_decode() or forward_batch.forward_mode.is_target_verify()
++            if is_decode_phase and not isinstance(out, tuple):
++                impl = self.dsa_decode_impl if not forward_batch.forward_mode.is_extend_without_speculative() else self.dsa_prefill_impl
++                raise RuntimeError(
++                    f"DCP on DSA: {forward_batch.forward_mode} returned a tensor from impl={impl} use_mha={self.use_mha} "
++                    f"fused_topk={self.use_fused_topk} draft={getattr(forward_batch, 'is_draft_batch', None)} "
++                    f"bs={forward_batch.batch_size} q={tuple(q.shape)}"
++                )
++        return out
++
+     def forward_decode(
+         self,
+         q: torch.Tensor,
+-- 
+2.50.1 (Apple Git-155)
+

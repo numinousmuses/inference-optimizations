@@ -1,0 +1,141 @@
+From e63458fabc8b1dbe1fcf37fc487cdebbbf2ddeba Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Mon, 21 Sep 2026 21:45:42 +0000
+Subject: [PATCH] scheduler: make --num-continuous-decode-steps real. After a
+ prefill batch, decode runs up to N steps before the next prefill is admitted
+ while requests are running (pure rule in managers/decode_burst.py, tests in
+ test/numinous). Short-turn agent traffic otherwise stalls decode behind every
+ turn's prefill (K2.7 15 tok/s per user at 200-token turns vs 67 at long
+ outputs).
+
+---
+ python/sglang/srt/managers/decode_burst.py | 30 ++++++++++++++++++++
+ python/sglang/srt/managers/scheduler.py    | 16 +++++++++++
+ test/numinous/test_decode_burst.py         | 33 ++++++++++++++++++++++
+ 3 files changed, 79 insertions(+)
+ create mode 100644 python/sglang/srt/managers/decode_burst.py
+ create mode 100644 test/numinous/test_decode_burst.py
+
+diff --git a/python/sglang/srt/managers/decode_burst.py b/python/sglang/srt/managers/decode_burst.py
+new file mode 100644
+index 000000000..d6e9b24aa
+--- /dev/null
++++ b/python/sglang/srt/managers/decode_burst.py
+@@ -0,0 +1,30 @@
++"""Numinous: decode-burst admission rule behind --num-continuous-decode-steps.
++
++Pure so it can be unit-tested without the scheduler's GPU dependencies.
++"""
++
++
++def hold_prefill(
++    burst: int,
++    streak: int,
++    last_batch_was_extend: bool | None,
++    running_nonempty: bool,
++    running_prefill_only: bool,
++) -> bool:
++    """True when this scheduler pass should skip prefill admission and let decode take the step.
++
++    burst <= 1 disables the rule. The hold applies only after a non-extend (decode) pass, while fewer than
++    `burst` consecutive decode steps have run, and only when there are running decode requests; an idle
++    scheduler admits prefill immediately so first-token latency on an idle node is unchanged.
++    """
++    if burst <= 1 or last_batch_was_extend is None or last_batch_was_extend:
++        return False
++    if not running_nonempty or running_prefill_only:
++        return False
++    return streak < burst
++
++
++def next_streak(burst: int, streak: int, prefill_admitted: bool) -> int:
++    if burst <= 1:
++        return 0
++    return 0 if prefill_admitted else streak + 1
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index 7dc5be833..d81912c01 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -190,6 +190,7 @@ from sglang.srt.managers.overlap_utils import (
+     decide_needs_cpu_seq_lens,
+     resolve_forward_inputs,
+ )
++from sglang.srt.managers.decode_burst import hold_prefill, next_streak
+ from sglang.srt.managers.prefill_delayer import (
+     PrefillDelayer,
+     PrefillDelayerSinglePassExecutor,
+@@ -1159,6 +1160,11 @@ class Scheduler(
+ 
+     def init_chunked_prefill(self):
+         self.chunked_prefill_size = get_schedule().chunked_prefill_size
++        # Numinous: --num-continuous-decode-steps. After a prefill batch, let decode run up to this many
++        # steps before the next prefill batch is admitted, while requests are running. Bounds how often
++        # short-turn agent traffic stalls decode behind prefill; idle prefill latency is unchanged.
++        self.decode_burst = max(1, int(get_schedule().num_continuous_decode_steps or 1))
++        self.decode_streak = 0
+         uses_transformers_backend = (
+             get_resolved_model_impl(self.model_config) == ModelImpl.TRANSFORMERS
+         )
+@@ -3103,10 +3109,20 @@ class Scheduler(
+ 
+         if self.dllm_config is not None:
+             new_batch = self.get_new_batch_dllm(running_batch)
++        elif hold_prefill(
++            self.decode_burst,
++            self.decode_streak,
++            (last_batch.forward_mode.is_extend() if last_batch is not None else None),
++            not running_batch.is_empty(),
++            bool(running_batch.is_prefill_only),
++        ):
++            # Numinous: hold prefill for this pass; decode keeps the step.
++            new_batch = None
+         else:
+             prefill_plan = self.get_new_batch_prefill(running_batch)
+             new_batch = prefill_plan.batch_to_run
+             running_batch = prefill_plan.running_batch
++        self.decode_streak = next_streak(self.decode_burst, self.decode_streak, new_batch is not None)
+ 
+         need_mlp_sync = self.require_mlp_sync
+         if (
+diff --git a/test/numinous/test_decode_burst.py b/test/numinous/test_decode_burst.py
+new file mode 100644
+index 000000000..55a6b890a
+--- /dev/null
++++ b/test/numinous/test_decode_burst.py
+@@ -0,0 +1,33 @@
++import sys, pathlib
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "python"))
++from sglang.srt.managers.decode_burst import hold_prefill, next_streak  # noqa: E402
++
++
++def test_disabled_at_one():
++    assert hold_prefill(1, 0, False, True, False) is False
++
++
++def test_holds_for_burst_then_releases():
++    burst, streak = 4, 0
++    held = []
++    for _ in range(6):
++        h = hold_prefill(burst, streak, False, True, False)
++        held.append(h)
++        streak = next_streak(burst, streak, prefill_admitted=not h)
++    assert held == [True, True, True, True, False, True]  # four decode steps, a prefill pass (streak resets), decode again
++
++
++def test_idle_scheduler_never_holds():
++    assert hold_prefill(8, 0, False, False, False) is False
++    assert hold_prefill(8, 0, False, True, True) is False   # prefill-only running batch has nothing to decode
++
++
++def test_after_prefill_pass_no_hold():
++    assert hold_prefill(8, 0, True, True, False) is False
++    assert hold_prefill(8, 0, None, True, False) is False
++
++
++def test_streak_resets_on_prefill():
++    assert next_streak(4, 3, prefill_admitted=True) == 0
++    assert next_streak(4, 3, prefill_admitted=False) == 4
++    assert next_streak(1, 5, prefill_admitted=False) == 0
+-- 
+2.50.1 (Apple Git-155)
+

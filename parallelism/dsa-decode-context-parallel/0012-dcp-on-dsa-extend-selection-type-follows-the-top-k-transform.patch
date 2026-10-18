@@ -1,0 +1,55 @@
+From adb125b5aa2a3f80d53cc36b7796a9ed8ce79e31 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 03:58:48 +0000
+Subject: [PATCH] dcp on dsa: extend selection type follows the top-k transform
+ (RAGGED positions, PAGED slots)
+
+---
+ .../sglang/srt/layers/attention/dsa_backend.py   | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 5dbd44622..34826ab7e 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2051,7 +2051,10 @@ class DeepseekSparseAttnBackend(
+                 # Numinous DCP extend: gathered query heads, local KV shard, (o, lse) for the cross-rank merge.
+                 # Uses the indexer's positions directly, whichever top-k transform produced page_table_1.
+                 positions = self._pad_topk_indices(topk_indices, q_nope.shape[0]) if topk_indices is not None else None
+-                return self._forward_dcp_extend_local(q_nope, q_rope, layer, forward_batch, metadata, positions)
++                return self._forward_dcp_extend_local(
++                    q_nope, q_rope, layer, forward_batch, metadata, positions,
++                    selection_is_slots=(topk_transform_method != TopkTransformMethod.RAGGED),
++                )
+             if topk_transform_method == TopkTransformMethod.RAGGED:
+                 _has_prefix = any(forward_batch.extend_prefix_lens_cpu)
+                 page_table_1 = topk_indices
+@@ -2969,7 +2972,7 @@ class DeepseekSparseAttnBackend(
+             self._dcp_inv_buf = buf
+         return buf[:size]
+ 
+-    def _forward_dcp_extend_local(self, q_nope, q_rope, layer, forward_batch: ForwardBatch, metadata, topk_indices):
++    def _forward_dcp_extend_local(self, q_nope, q_rope, layer, forward_batch: ForwardBatch, metadata, topk_indices, selection_is_slots: bool = False):
+         """Numinous DCP extend over this rank's KV shard. Positions p with p % dcp == rank live at local slot p // dcp.
+         The indexer selected global positions; keep the owned ones, address them in a per-rank dequantised
+         request-contiguous copy of the local shard, run the bf16 sparse kernel with all gathered query heads and
+@@ -2995,11 +2998,12 @@ class DeepseekSparseAttnBackend(
+         else:
+             kv_local = kv_layer[flat_local].to(q_nope.dtype)
+         kv_local = kv_local.view(kv_local.shape[0], 1, -1)
+-        # The indexer's selection arrives as virtual KV slots (fused top-k), or as positions when the transform is
+-        # not fused. Either way map into the row order of kv_local: slots through an inverse table over the virtual
+-        # slot space (owned slots only; everything else stays -1), positions through the owner rule and offsets.
++        # The indexer's selection arrives as positions within the request under the RAGGED prefill routing, or as
++        # virtual KV slots under PAGED. Either way map into the row order of kv_local: slots through an inverse
++        # table over the virtual slot space (owned slots only; everything else stays -1), positions through the
++        # owner rule and per-request offsets.
+         sel = topk_indices.to(torch.int64)
+-        if self.use_fused_topk:
++        if selection_is_slots:
+             vsize = (self.token_to_kv_pool.size + self.token_to_kv_pool.page_size) * dcp + 1
+             inv = self._dcp_inverse_slot_table(vsize, pt.device)
+             inv.fill_(-1)
+-- 
+2.50.1 (Apple Git-155)
+

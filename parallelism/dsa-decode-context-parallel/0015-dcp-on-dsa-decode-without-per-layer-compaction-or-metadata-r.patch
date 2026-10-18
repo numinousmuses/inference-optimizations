@@ -1,0 +1,120 @@
+From 9d843c949e01004b39198b2bcf8fd59b91ebf335 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 05:07:21 +0000
+Subject: [PATCH] dcp on dsa: decode without per-layer compaction or metadata
+ recompute. Owned filter in place (-1 masked by the kernel), FlashMLA
+ scheduler metadata cached per row count at full top-k width.
+
+---
+ .../srt/layers/attention/dsa_backend.py       | 51 ++++++++++++-------
+ 1 file changed, 34 insertions(+), 17 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 2b295303a..9e7319fd9 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2163,13 +2163,10 @@ class DeepseekSparseAttnBackend(
+             if get_parallel().dcp_enabled and forward_batch.forward_mode.is_target_verify():
+                 # Numinous DCP: verify rows are a merge phase (q heads gathered by the model side): keep the owned
+                 # selected slots and return (o, lse) for the cross-rank merge.
+-                from sglang.srt.layers.attention.dsa.dcp_topk import owned_local_slots
+-                page_table_1, local_counts = owned_local_slots(
+-                    page_table_1, get_parallel().attn_dcp_size, get_parallel().attn_dcp_rank
+-                )
++                page_table_1 = self._dcp_owned_in_place(page_table_1)
+                 return self._forward_flashmla_kv_dcp(
+                     q_all=q_all, kv_cache=kv_cache, v_head_dim=layer.v_head_dim, sm_scale=layer.scaling,
+-                    layer=layer, page_table_1=page_table_1, cache_seqlens=local_counts,
++                    layer=layer, page_table_1=page_table_1, cache_seqlens=None,
+                 )
+             if get_parallel().dcp_enabled and forward_batch.forward_mode.is_draft_extend_v2():
+                 # Numinous DCP: the draft's extend keeps its own heads, so attention runs over the gathered prefix
+@@ -2330,12 +2327,9 @@ class DeepseekSparseAttnBackend(
+ 
+         if get_parallel().dcp_enabled:
+             # Numinous DCP: the selected slots are virtual; keep the ones this rank owns as local rows, the rest
+-            # become -1. FlashMLA's fp8 decode kernel masks -1, takes the per-row valid count as cache_seqlens and
+-            # returns the rank-local (o, lse) the cross-rank merge consumes (base e).
+-            from sglang.srt.layers.attention.dsa.dcp_topk import owned_local_slots
+-            page_table_1, local_counts = owned_local_slots(
+-                page_table_1, get_parallel().attn_dcp_size, get_parallel().attn_dcp_rank
+-            )
++            # become -1 in place (no compaction: the fp8 decode kernel masks -1 natively). The scheduler metadata
++            # is computed once per row count with every row at full width, not per layer.
++            page_table_1 = self._dcp_owned_in_place(page_table_1)
+             if q_rope is not None:
+                 q_all = concat_mla_absorb_q_general(q_nope, q_rope)
+             return self._forward_flashmla_kv_dcp(
+@@ -2345,7 +2339,7 @@ class DeepseekSparseAttnBackend(
+                 sm_scale=layer.scaling,
+                 layer=layer,
+                 page_table_1=page_table_1,
+-                cache_seqlens=local_counts,
++                cache_seqlens=None,
+             )
+ 
+         if self.dsa_decode_impl == "flashmla_sparse":
+@@ -3042,6 +3036,26 @@ class DeepseekSparseAttnBackend(
+         lse = torch.where(empty, torch.full_like(lse, float("-inf")), lse)
+         return o, lse
+ 
++    def _dcp_owned_in_place(self, slots: torch.Tensor) -> torch.Tensor:
++        """Virtual selected slots -> this rank's local rows where owned, -1 elsewhere. One elementwise pass."""
++        parallel = get_parallel()
++        dcp, rank = parallel.attn_dcp_size, parallel.attn_dcp_rank
++        s64 = slots.to(torch.int64)
++        owned = (s64 >= 0) & (s64 % dcp == rank)
++        return torch.where(owned, s64 // dcp, torch.full_like(s64, -1)).to(torch.int32)
++
++    def _dcp_full_width_metadata(self, rows: int, device):
++        """FlashMLA scheduler metadata for `rows` rows at full top-k width, cached per row count (static under
++        CUDA graph capture). The kernel masks -1 indices, so every row can be scheduled at full width."""
++        cache = getattr(self, "_dcp_meta_cache", None)
++        if cache is None:
++            cache = self._dcp_meta_cache = {}
++        hit = cache.get(rows)
++        if hit is None:
++            seqlens = torch.full((rows,), self.dsa_index_topk, dtype=torch.int32, device=device)
++            hit = cache[rows] = (seqlens, self._compute_flashmla_metadata(seqlens, 1))
++        return hit
++
+     def _forward_flashmla_kv_dcp(
+         self,
+         q_all: torch.Tensor,
+@@ -3050,7 +3064,7 @@ class DeepseekSparseAttnBackend(
+         sm_scale: float,
+         layer,
+         page_table_1: torch.Tensor,
+-        cache_seqlens: torch.Tensor,
++        cache_seqlens: Optional[torch.Tensor],
+     ):
+         """Numinous DCP decode: FlashMLA fp8 decode over this rank's owned selected slots; returns (o, lse)."""
+         from sgl_kernel.flash_mla import flash_mla_with_kvcache
+@@ -3069,8 +3083,10 @@ class DeepseekSparseAttnBackend(
+             kv_cache = quantize_k_cache(kv_cache)
+         indices = page_table_1.unsqueeze(1)
+         assert indices.shape[-1] == self.dsa_index_topk
+-        # the tile scheduler must see this rank's valid counts, not the global topk-clipped lengths
+-        flashmla_metadata = self._compute_flashmla_metadata(cache_seqlens, 1)
++        if cache_seqlens is None:
++            cache_seqlens, flashmla_metadata = self._dcp_full_width_metadata(q_all.shape[0], q_all.device)
++        else:
++            flashmla_metadata = self._compute_flashmla_metadata(cache_seqlens, 1)
+         o, lse = flash_mla_with_kvcache(
+             q=q_input,
+             k_cache=kv_cache,
+@@ -3088,8 +3104,9 @@ class DeepseekSparseAttnBackend(
+             lse = lse[:, :num_q_heads]
+         o = o.view(-1, num_q_heads, v_head_dim)
+         lse = lse.reshape(-1, num_q_heads).float()
+-        # rows this rank holds nothing for: neutral partials so the merge ignores them
+-        empty = (cache_seqlens == 0).view(-1, 1)
++        # rows this rank holds nothing for: neutral partials so the merge ignores them (a fully masked row gives
++        # the kernel nothing to normalise over; its lse is not finite)
++        empty = ~torch.isfinite(lse) | (page_table_1 >= 0).sum(dim=-1, keepdim=True).eq(0)
+         o = torch.where(empty.unsqueeze(-1), torch.zeros_like(o), o)
+         lse = torch.where(empty, torch.full_like(lse, float("-inf")), lse)
+         return o, lse
+-- 
+2.50.1 (Apple Git-155)
+

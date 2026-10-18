@@ -1,0 +1,49 @@
+From 1a44ad1eb6fd3653999d2c43774762e5a9529d8d Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 02:02:03 +0000
+Subject: [PATCH] dcp on dsa: draft extend runs over the gathered prefix with
+ the bf16 sparse kernel and returns a tensor; only target verify returns (o,
+ lse)
+
+---
+ .../sglang/srt/layers/attention/dsa_backend.py  | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index ba35af1b3..361084307 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2145,10 +2145,9 @@ class DeepseekSparseAttnBackend(
+         elif dsa_impl == "flashmla_kv":
+             if q_rope is not None:
+                 q_all = concat_mla_absorb_q_general(q_nope, q_rope)
+-            if get_parallel().dcp_enabled and (
+-                forward_batch.forward_mode.is_target_verify() or forward_batch.forward_mode.is_draft_extend_v2()
+-            ):
+-                # Numinous DCP: speculative verify rows select virtual slots; keep the owned ones and return (o, lse)
++            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_target_verify():
++                # Numinous DCP: verify rows are a merge phase (q heads gathered by the model side): keep the owned
++                # selected slots and return (o, lse) for the cross-rank merge.
+                 from sglang.srt.layers.attention.dsa.dcp_topk import owned_local_slots
+                 page_table_1, local_counts = owned_local_slots(
+                     page_table_1, get_parallel().attn_dcp_size, get_parallel().attn_dcp_rank
+@@ -2157,6 +2156,16 @@ class DeepseekSparseAttnBackend(
+                     q_all=q_all, kv_cache=kv_cache, v_head_dim=layer.v_head_dim, sm_scale=layer.scaling,
+                     layer=layer, page_table_1=page_table_1, cache_seqlens=local_counts,
+                 )
++            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_draft_extend_v2():
++                # Numinous DCP: the draft's extend keeps its own heads, so attention runs over the gathered prefix
++                # (request-contiguous [prefix | extend]) with the bf16 sparse kernel and returns a plain tensor.
++                kv_gathered = self._gather_dcp_prefix_kv(forward_batch, layer, k, k_rope)
++                positions = self._pad_topk_indices(topk_indices, q_all.shape[0])
++                offsets = torch.repeat_interleave(metadata.cu_seqlens_k[:-1], forward_batch.extend_seq_lens)
++                ragged = torch.where(positions >= 0, positions + offsets.unsqueeze(1), positions)
++                return self._forward_flashmla_sparse(
++                    q_all=q_all, kv_cache=kv_gathered, page_table_1=ragged, sm_scale=layer.scaling, v_head_dim=layer.v_head_dim,
++                )
+             return self._forward_flashmla_kv(
+                 q_all=q_all,
+                 kv_cache=kv_cache,
+-- 
+2.50.1 (Apple Git-155)
+

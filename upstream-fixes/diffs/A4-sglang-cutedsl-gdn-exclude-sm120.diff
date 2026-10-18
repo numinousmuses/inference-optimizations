@@ -1,0 +1,18 @@
+--- a/python/sglang/srt/layers/attention/linear/kernels/gdn_cutedsl.py	2026-09-29 06:30:57.700482554 +0000
++++ b/python/sglang/srt/layers/attention/linear/kernels/gdn_cutedsl.py	2026-09-29 06:31:28.844675956 +0000
+@@ -23,11 +23,13 @@
+ 
+ 
+ def _is_blackwell() -> bool:
+-    """True iff running on SM100+ (Blackwell) where the ported kernel is valid."""
++    """True iff running on SM10x/SM11x (datacenter Blackwell), where the ported
++    kernel is valid. SM12x (RTX 50xx / RTX PRO 6000) has no tcgen05 and NVVM
++    rejects the kernel for sm_120a."""
+     if not torch.cuda.is_available():
+         return False
+     major, _ = torch.cuda.get_device_capability()
+-    return major >= 10
++    return major in (10, 11)
+ 
+ 
+ class CuteDSLGDNKernel(LinearAttnKernelBase):

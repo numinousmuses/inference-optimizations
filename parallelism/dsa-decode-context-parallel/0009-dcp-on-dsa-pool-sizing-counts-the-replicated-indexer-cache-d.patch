@@ -1,0 +1,28 @@
+From 1b6ee357d05f858e98e193e5edd446c78150f738 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 02:31:22 +0000
+Subject: [PATCH] dcp on dsa: pool sizing counts the replicated indexer cache
+ dcp times per row
+
+---
+ python/sglang/srt/model_executor/pool_configurator.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/python/sglang/srt/model_executor/pool_configurator.py b/python/sglang/srt/model_executor/pool_configurator.py
+index 8698cef49..890ec6fe4 100644
+--- a/python/sglang/srt/model_executor/pool_configurator.py
++++ b/python/sglang/srt/model_executor/pool_configurator.py
+@@ -365,6 +365,10 @@ class DefaultPoolConfigurator(MemoryPoolConfigurator):
+         )
+         memory_config = get_memory()
+         indexer_ratio = 1
++        # Numinous DCP on DSA: the target keeps the indexer key cache replicated over the virtual slot span
++        # (max_total x dcp rows per rank), so each pool row carries dcp x the indexer bytes.
++        if not kvc.is_draft_worker and get_parallel().attn_dcp_size > 1:
++            indexer_ratio = get_parallel().attn_dcp_size
+         if memory_config.enable_hisparse:
+             from sglang.srt.mem_cache.sparsity import parse_hisparse_config
+ 
+-- 
+2.50.1 (Apple Git-155)
+

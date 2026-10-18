@@ -1,0 +1,6 @@
+{
+ "acc_dir": "/cache/accuracy/glm-5.3_standard_20260929-025644",
+ "control": "kv4glm_scratch",
+ "control_found": true,
+ "arms": {}
+}

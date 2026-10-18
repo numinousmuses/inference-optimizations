@@ -1,0 +1,189 @@
+{
+ "cell": "deepseek-v4-pro/fast",
+ "arm": "v20_megamoe_w4a4_bal",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "7343558683f3ca56",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--chunked-prefill-size",
+  "16384",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion"
+ ],
+ "ladder": [
+  16,
+  48
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-28T07:00:25Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 16,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 75.14,
+   "warm_agg_out_tok_s": 493.3,
+   "steady_agg_out_tok_s": 638.1,
+   "ttft_p90_s": 2.64,
+   "ttft_p99_s": 3.88,
+   "ttft_max_s": 4.66,
+   "turn_wall_p50_s": 5.16,
+   "turn_wall_p90_s": 8.73,
+   "turn_wall_p99_s": 11.43,
+   "tail_last10pct_s": 14.6,
+   "warm_session_rate_sum": 750.5,
+   "warm_ttft_p50_s": 1.26,
+   "hit_rate": 0.9343,
+   "mean_prompt_tokens": 62584,
+   "mean_out_tokens": 248.6,
+   "accept_len": 4.29
+  },
+  {
+   "repeat": 0,
+   "sessions": 48,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 46.9,
+   "warm_agg_out_tok_s": 1020.1,
+   "steady_agg_out_tok_s": 1328.0,
+   "ttft_p90_s": 4.16,
+   "ttft_p99_s": 7.33,
+   "ttft_max_s": 9.26,
+   "turn_wall_p50_s": 6.64,
+   "turn_wall_p90_s": 12.95,
+   "turn_wall_p99_s": 17.77,
+   "tail_last10pct_s": 14.8,
+   "warm_session_rate_sum": 1470.1,
+   "warm_ttft_p50_s": 2.12,
+   "hit_rate": 0.9385,
+   "mean_prompt_tokens": 59647,
+   "mean_out_tokens": 229.5,
+   "accept_len": 4.3
+  }
+ ],
+ "booted": true,
+ "boot_min": 19.3,
+ "kv_pool_tokens": [
+  1412096
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-b84f7da0-0dd6-4609-8baf-9695c2079c7e",
+   "GPU-af87da81-5854-75e8-dd12-e3bf32aeaa4a",
+   "GPU-308be06b-c68c-86bf-de46-bf597342962f",
+   "GPU-508f7399-4c41-ddc6-d81b-35ddec7d8675",
+   "GPU-105abf41-f871-8287-8487-d39b076ccc9d",
+   "GPU-3a12209a-f9c1-c1a9-1dd3-f93a152daa1b",
+   "GPU-9644484f-7609-f906-49d0-55e774c05953",
+   "GPU-16dc6da0-1f6f-2b38-cf25-ea10d0bd652a"
+  ]
+ },
+ "sessions_dropped_oversize": 14,
+ "dp_peak_running": {
+  "0": 6,
+  "1": 6,
+  "2": 6,
+  "3": 6,
+  "4": 6,
+  "5": 6,
+  "6": 6,
+  "7": 6
+ },
+ "numinous_log": [
+  "[2026-09-28 07:19:44 DP5 TP5 EP5] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-28 07:20:32 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [1894, 2048, 2048, 2048, 2048, 2048, 2048, 2048], rank rows 1894 -> 2029"
+ ],
+ "spec_acceptance": {
+  "samples": 305,
+  "accept_len_mean": 4.274,
+  "accept_len_p10": 3.52,
+  "accept_len_p50": 4.27,
+  "accept_len_p90": 5.03,
+  "accept_rate_mean": 0.654
+ },
+ "root_cause": [
+  "...",
+  "Traceback (most recent call last):",
+  "  File \"<frozen runpy>\", line 198, in _run_module_as_main",
+  "  File \"<frozen runpy>\", line 88, in _run_code",
+  "  File \"/sgl-workspace/sglang/python/sglang/launch_server.py\", line 84, in <module>",
+  "    run_server(server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/launch_server.py\", line 67, in run_server",
+  "    launch_server(server_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/entrypoints/http_server.py\", line 2853, in launch_server",
+  "    ) = Engine._launch_subprocesses(",
+  "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py\", line 1108, in _launch_subprocesses",
+  "    port_args = PortArgs.init_new(server_args)",
+  "                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/server_args.py\", line 892, in init_new",
+  "    wait_port_available(rpc_port, \"rpc_port\")",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/utils/network.py\", line 94, in wait_port_available",
+  "    raise ValueError(",
+  "ValueError: rpc_port at 30236 is not available in 30 seconds. rpc_port at 30236 is not available",
+  "... error lines:",
+  "    raise ValueError(",
+  "ValueError: rpc_port at 30236 is not available in 30 seconds. rpc_port at 30236 is not available",
+  "    raise ValueError(",
+  "ValueError: rpc_port at 30236 is not available in 30 seconds. rpc_port at 30236 is not available",
+  "... tail:",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/entrypoints/engine.py\", line 1108, in _launch_subprocesses",
+  "    port_args = PortArgs.init_new(server_args)",
+  "                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/server_args.py\", line 892, in init_new",
+  "    wait_port_available(rpc_port, \"rpc_port\")",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/utils/network.py\", line 94, in wait_port_available",
+  "    raise ValueError(",
+  "ValueError: rpc_port at 30236 is not available in 30 seconds. rpc_port at 30236 is not available"
+ ]
+}

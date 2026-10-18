@@ -1,0 +1,187 @@
+{
+ "cell": "qwen3.6-35b-a3b/standard",
+ "arm": "v20_stock_q36",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [],
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--moe-runner-backend",
+   "marlin"
+  ],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260928-083118",
+  "_acc_control": "v20_stock_q36"
+ },
+ "config_digest": "4b0566893314e7c6",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--mem-fraction-static",
+  "0.85",
+  "--attention-backend",
+  "flashinfer",
+  "--chunked-prefill-size",
+  "2048",
+  "--reasoning-parser",
+  "qwen3",
+  "--tool-call-parser",
+  "qwen3_coder",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--enable-linear-replayssm-spec",
+  "--max-mamba-cache-size",
+  "512",
+  "--max-running-requests",
+  "96",
+  "--moe-runner-backend",
+  "marlin"
+ ],
+ "ladder": [
+  2,
+  8
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-28T08:31:23Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 2,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 192.85,
+   "warm_agg_out_tok_s": 266.0,
+   "steady_agg_out_tok_s": null,
+   "ttft_p90_s": 1.6,
+   "ttft_p99_s": 1.6,
+   "ttft_max_s": 1.6,
+   "turn_wall_p50_s": 2.92,
+   "turn_wall_p90_s": 3.75,
+   "turn_wall_p99_s": 3.75,
+   "tail_last10pct_s": null,
+   "warm_session_rate_sum": 284.7,
+   "warm_ttft_p50_s": 0.59,
+   "hit_rate": 0.9426,
+   "mean_prompt_tokens": 91691,
+   "mean_out_tokens": 400.0,
+   "accept_len": 3.32
+  },
+  {
+   "repeat": 0,
+   "sessions": 8,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 93.56,
+   "warm_agg_out_tok_s": 228.1,
+   "steady_agg_out_tok_s": 321.4,
+   "ttft_p90_s": 5.5,
+   "ttft_p99_s": 5.58,
+   "ttft_max_s": 5.58,
+   "turn_wall_p50_s": 4.79,
+   "turn_wall_p90_s": 12.04,
+   "turn_wall_p99_s": 12.25,
+   "tail_last10pct_s": 1.4,
+   "warm_session_rate_sum": 489.7,
+   "warm_ttft_p50_s": 0.51,
+   "hit_rate": 0.954,
+   "mean_prompt_tokens": 103758,
+   "mean_out_tokens": 275.8,
+   "accept_len": 3.08
+  },
+  {
+   "repeat": 1,
+   "sessions": 2,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 264.56,
+   "warm_agg_out_tok_s": 191.3,
+   "steady_agg_out_tok_s": null,
+   "ttft_p90_s": 1.59,
+   "ttft_p99_s": 1.59,
+   "ttft_max_s": 1.59,
+   "turn_wall_p50_s": 3.06,
+   "turn_wall_p90_s": 3.66,
+   "turn_wall_p99_s": 3.66,
+   "tail_last10pct_s": null,
+   "warm_session_rate_sum": 285.6,
+   "warm_ttft_p50_s": 0.58,
+   "hit_rate": 0.9426,
+   "mean_prompt_tokens": 91691,
+   "mean_out_tokens": 299.2,
+   "accept_len": 2.92
+  },
+  {
+   "repeat": 1,
+   "sessions": 8,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 82.28,
+   "warm_agg_out_tok_s": 214.4,
+   "steady_agg_out_tok_s": 290.7,
+   "ttft_p90_s": 1.73,
+   "ttft_p99_s": 5.1,
+   "ttft_max_s": 5.1,
+   "turn_wall_p50_s": 3.78,
+   "turn_wall_p90_s": 12.06,
+   "turn_wall_p99_s": 12.38,
+   "tail_last10pct_s": 1.8,
+   "warm_session_rate_sum": 454.3,
+   "warm_ttft_p50_s": 0.53,
+   "hit_rate": 0.9541,
+   "mean_prompt_tokens": 103758,
+   "mean_out_tokens": 258.0,
+   "accept_len": 2.95
+  }
+ ],
+ "booted": true,
+ "boot_min": 7.1,
+ "kv_pool_tokens": [
+  2353671
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-11988694-ab4c-414d-7289-a00383661c27"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260928-083118/accuracy_v20_stock_q36.json",
+  "seconds": 139.8,
+  "prompts_source": "sessions:real_sessions_240.json",
+  "gsm8k_acc": 0.87
+ },
+ "sessions_dropped_oversize": 1,
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 42,
+  "accept_len_mean": 3.326,
+  "accept_len_p10": 2.95,
+  "accept_len_p50": 3.37,
+  "accept_len_p90": 3.63,
+  "accept_rate_mean": 0.776
+ },
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ }
+}

@@ -1,0 +1,60 @@
+--- a/python/sglang/srt/layers/quantization/kv_cache.py	2026-09-29 06:32:16.123341742 +0000
++++ b/python/sglang/srt/layers/quantization/kv_cache.py	2026-09-29 06:32:27.219708037 +0000
+@@ -81,3 +81,35 @@
+         layer.v_scale.copy_(v_scale)
+         layer.k_scale_float = k_scale
+         layer.v_scale_float = v_scale
++
++
++def reset_kv_scales_for_unquantized_cache(model: torch.nn.Module) -> int:
++    """Neutralize checkpoint KV scales when the KV cache is not quantized.
++
++    ``BaseKVCacheMethod`` loads per-tensor FP8 KV scales before the KV cache
++    dtype is resolved. They describe a cache stored as ``k / k_scale``; an
++    unquantized (bf16/fp16/fp32) cache stores ``k`` as is, but attention
++    backends still multiply by ``k_scale_float``/``v_scale_float``. Reset them
++    to 1.0 so unquantized caches read back what was written. Returns the number
++    of attention layers changed.
++    """
++    changed = 0
++    for module in model.modules():
++        k_float = getattr(module, "k_scale_float", None)
++        v_float = getattr(module, "v_scale_float", None)
++        if k_float in (None, 1.0) and v_float in (None, 1.0):
++            continue
++        module.k_scale_float = 1.0
++        module.v_scale_float = 1.0
++        for name in ("k_scale", "v_scale"):
++            scale = getattr(module, name, None)
++            if isinstance(scale, torch.Tensor):
++                with torch.no_grad():
++                    scale.fill_(1.0)
++        changed += 1
++    if changed:
++        logger.info(
++            "KV cache is unquantized: ignoring checkpoint KV scales on %d layers.",
++            changed,
++        )
++    return changed
+--- a/python/sglang/srt/model_executor/model_runner.py	2026-09-29 06:30:57.700651647 +0000
++++ b/python/sglang/srt/model_executor/model_runner.py	2026-09-29 06:32:27.304005815 +0000
+@@ -1483,6 +1483,19 @@
+             if resolved_kv_cache_dtype is not None
+             else get_model().kv_cache_dtype
+         )
++        # Checkpoint FP8 KV scales only describe an FP8 cache; an unquantized
++        # cache must not be rescaled on read.
++        model = getattr(self, "model", None)
++        if model is not None and self.kv_cache_dtype in (
++            torch.bfloat16,
++            torch.float16,
++            torch.float32,
++        ):
++            from sglang.srt.layers.quantization.kv_cache import (
++                reset_kv_scales_for_unquantized_cache,
++            )
++
++            reset_kv_scales_for_unquantized_cache(model)
+ 
+     def _get_attention_backend(self, init_new_workspace: bool = False):
+         return get_attention_backend(

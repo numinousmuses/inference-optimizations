@@ -1,0 +1,73 @@
+From 119241975037453af67d46085915f80b4338fa2a Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 20:17:43 +0000
+Subject: [PATCH] decode burst under DP: hold only while the busiest rank's
+ waiting queue is short (SGLANG_DECODE_BURST_QUEUE_CAP, default 2); test
+
+---
+ python/sglang/srt/managers/prefill_delayer.py | 8 +++++++-
+ test/numinous/test_delayer_burst.py           | 9 +++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/managers/prefill_delayer.py b/python/sglang/srt/managers/prefill_delayer.py
+index 16f55b332..5e158391b 100644
+--- a/python/sglang/srt/managers/prefill_delayer.py
++++ b/python/sglang/srt/managers/prefill_delayer.py
+@@ -1,5 +1,6 @@
+ import dataclasses
+ import logging
++import os
+ import time
+ from collections import deque
+ from dataclasses import dataclass, field
+@@ -137,6 +138,7 @@ class PrefillDelayer:
+ 
+         self._curr_state: Optional[_State] = None
+         self.skip_first_delayer = True
++        self._burst_queue_cap = int(os.environ.get("SGLANG_DECODE_BURST_QUEUE_CAP", "2"))
+ 
+         assert (
+             not server_args.disable_overlap_schedule
+@@ -205,10 +207,14 @@ class PrefillDelayer:
+         # Numinous decode burst under DP: every rank sees the same gathered streaks, so this decision is uniform.
+         # Hold prefill while any rank with running decodes has run fewer than `decode_burst` decode steps since its
+         # last prefill; bounded by max_delay_passes like the other delays so first-token latency stays finite.
++        # The hold only pays when few turns are waiting: with short agent outputs a turn is always waiting and
++        # holding prefill starved them (GLM coding shape: 2,093 -> 913 tok/s, TTFT p99 29 s), while on long
++        # outputs it gave +11%. So it applies only while the busiest rank has at most `burst_queue_cap` waiting.
+         burst_hold = False
+         if decode_burst > 1:
+             has_running = global_running_batch > 0
+-            if bool(has_running.any().item()):
++            queue_short = int(global_waiting_queue_len.max().item()) <= self._burst_queue_cap
++            if queue_short and bool(has_running.any().item()):
+                 burst_hold = int(global_decode_streak[has_running].min().item()) < decode_burst
+ 
+         # Compute derived global states
+diff --git a/test/numinous/test_delayer_burst.py b/test/numinous/test_delayer_burst.py
+index 5f6a50ed6..de2788c69 100644
+--- a/test/numinous/test_delayer_burst.py
++++ b/test/numinous/test_delayer_burst.py
+@@ -17,6 +17,7 @@ def _delayer(fake_gathered):
+     d.dp_size = 2
+     d.skip_first_delayer = False
+     d._metrics_collector = None
++    d._burst_queue_cap = 2
+     d._gather_info = lambda **kw: torch.tensor(fake_gathered, dtype=torch.int64)
+     return d
+ 
+@@ -46,3 +47,11 @@ def test_burst_off_by_default():
+     out = d._negotiate_should_allow_prefill_pure(None, True, 0.5, running_batch=8, max_prefill_bs=4,
+                                                  max_running_requests=64, waiting_queue_len=2, decode_streak=0, decode_burst=1)
+     assert out.output_allow is True
++
++
++def test_burst_does_not_hold_when_turns_are_queued():
++    # busiest rank has 5 waiting turns: prefill must not be held even mid-streak
++    d = _delayer([[1, 0, 8, 4, 5, 2], [1, 0, 8, 4, 1, 2]])
++    out = d._negotiate_should_allow_prefill_pure(None, True, 0.5, running_batch=8, max_prefill_bs=4,
++                                                 max_running_requests=64, waiting_queue_len=5, decode_streak=2, decode_burst=8)
++    assert out.output_allow is True
+-- 
+2.50.1 (Apple Git-155)
+

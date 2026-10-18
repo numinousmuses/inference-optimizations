@@ -1,0 +1,120 @@
+{
+ "cell": "gemma-4-26b-a4b/standard",
+ "arm": "kv4tri_gemma_nvfp4",
+ "delta": {
+  "flags_add": [
+   "--attention-backend",
+   "triton",
+   "--triton-attention-num-kv-splits",
+   "64",
+   "--kv-cache-dtype",
+   "nvfp4"
+  ],
+  "flags_remove": [
+   "--attention-backend",
+   "--triton-attention-num-kv-splits",
+   "--kv-cache-dtype"
+  ],
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "overlay": {
+   "operations/patches/gemma_extend_hooks.py": "!run",
+   "operations/patches/kv4tri_hooks.py": "!run"
+  },
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "RTXPRO6000",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/gemma-4-26b-a4b_standard_20260929-004052",
+  "_acc_control": "gemma_standard_v20"
+ },
+ "config_digest": "3c6a1a658c086425",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--moe-runner-backend",
+  "flashinfer_cutlass",
+  "--mem-fraction-static",
+  "0.86",
+  "--scheduler-recv-interval",
+  "16",
+  "--max-running-requests",
+  "320",
+  "--swa-full-tokens-ratio",
+  "0.10",
+  "--reasoning-parser",
+  "gemma4",
+  "--tool-call-parser",
+  "gemma4",
+  "--attention-backend",
+  "triton",
+  "--triton-attention-num-kv-splits",
+  "64",
+  "--kv-cache-dtype",
+  "nvfp4"
+ ],
+ "ladder": [
+  1,
+  2,
+  16,
+  24,
+  32
+ ],
+ "repeats": 2,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-29T00:41:13Z",
+ "runs": [],
+ "booted": false,
+ "boot_min": 2.1,
+ "kv_pool_tokens": [
+  5796605
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-94829218-d26d-ccd8-dd45-fb9f43242298"
+  ]
+ },
+ "root_cause": [
+  "...",
+  "[2026-09-29 00:42:58] Scheduler hit an exception: Traceback (most recent call last):",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 5857, in run_scheduler_process",
+  "    scheduler.run_event_loop()",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 1893, in run_event_loop",
+  "    dispatch_event_loop(self)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 5703, in dispatch_event_loop",
+  "    scheduler.event_loop_overlap()",
+  "  File \"/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context",
+  "    return func(*args, **kwargs)",
+  "           ^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 1991, in event_loop_overlap",
+  "    batch_result = self.run_batch(batch)",
+  "                   ^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/observability/scheduler_stage_metrics.py\", line 155, in wrapper",
+  "    return profiled_func(self, *args, **kwargs)",
+  "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py\", line 109, in wrapper",
+  "    return func(*args, **kwargs)",
+  "           ^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 4318, in run_batch",
+  "    batch_result = self.model_worker.forward_batch_generation(",
+  "                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/tp_worker.py\", line 628, in forward_batch_generation",
+  "    out = self.model_runner.forward(",
+  "          ^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "... error lines:",
+  "    raise NotImplementedError(\"kv4tri NVFP4 Triton extend: custom mask with a sliding window\")",
+  "NotImplementedError: kv4tri NVFP4 Triton extend: custom mask with a sliding window",
+  "... tail:",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/layers/attention/numinous_kv4tri.py\", line 281, in forward_extend",
+  "    raise NotImplementedError(\"kv4tri NVFP4 Triton extend: custom mask with a sliding window\")",
+  "NotImplementedError: kv4tri NVFP4 Triton extend: custom mask with a sliding window",
+  "[2026-09-29 00:42:58] SIGQUIT received. signum=None, frame=None. It usually means one child failed.",
+  "[2026-09-29 00:42:58] Sleeping 5 seconds before crash diagnostics to let GPU activity settle.",
+  "[rank0]:[W929 00:43:00.343025259 ProcessGroupNCCL.cpp:1624] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())",
+  "[2026-09-29 00:43:03] No live scheduler processes found; skipping py-spy and CUDA coredump.",
+  "[2026-09-29 00:43:03] kill_process_tree called: parent_pid=4, include_parent=True, pid=4"
+ ]
+}

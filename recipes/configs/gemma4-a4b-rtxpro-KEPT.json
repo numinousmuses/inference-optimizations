@@ -1,0 +1,33 @@
+{
+ "model": "nvidia/Gemma-4-26B-A4B-NVFP4",
+ "silicon": "RTX PRO 6000 Blackwell (SM120)",
+ "status": "GREEN 2026-08-28: 2nd-pod confirm within ±3% (same-DC-proxy caveat). Refine curve: 8k b104 4511@43.4 / b128 4697-4814@36.7-37.6 / b144 4846@33.7 / b160 4928@30.8 (floor-grazing).",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--moe-runner-backend",
+  "flashinfer_cutlass",
+  "--mem-fraction-static",
+  "0.86",
+  "--scheduler-recv-interval",
+  "16",
+  "--max-running-requests",
+  "320",
+  "--swa-full-tokens-ratio",
+  "0.10",
+  "--reasoning-parser",
+  "gemma4",
+  "--tool-call-parser",
+  "gemma4"
+ ],
+ "why": "default swa-full-tokens-ratio 0.8 misallocates 55.3GB to window-1024 SWA layers; 0.10 -> full pool 3.26M (4.5x). Measured: 8k/b128 4814@37.6 (-20% cost), 131k/b22 719@32.7 (-61%), 250k/b10 343@34.3 (-76%).",
+ "evidence": "numinous-inference/research/gpu-evidence/gemma_a4b_nvfp4_rtxpro.json arms swa_ratio_*",
+ "known_blocked": {
+  "trtllm_mha": "SM100-only assert in server_args; upstream port needed"
+ },
+ "queued_kernel_work": [
+  "L5 grouped-GEMM SM120 autotune",
+  "L6 k_eq_v V-dedup (~3.5GB)",
+  "L3 selective-fp8 re-export + gate"
+ ]
+}

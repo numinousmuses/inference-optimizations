@@ -1,0 +1,255 @@
+{
+ "cell": "glm-5.3/fast",
+ "arm": "final_glmfast_mixed",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "flags_remove": [
+   "--quantization"
+  ],
+  "flags_add": [
+   "--model-path",
+   "/cache/derived/GLM-5.3-NVFP4-FP8attn",
+   "--disable-shared-experts-fusion"
+  ],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/glm-5.3_fast_20260928-235637",
+  "_acc_control": "final_glmfast_series"
+ },
+ "config_digest": "fea59c78d18ebfb2",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--tp",
+  "8",
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--chunked-prefill-size",
+  "8192",
+  "--mem-fraction-static",
+  "0.88",
+  "--cuda-graph-max-bs-decode",
+  "64",
+  "--max-running-requests",
+  "64",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "4",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "5",
+  "--reasoning-parser",
+  "glm45",
+  "--tool-call-parser",
+  "glm47",
+  "--model-path",
+  "/cache/derived/GLM-5.3-NVFP4-FP8attn",
+  "--disable-shared-experts-fusion"
+ ],
+ "ladder": [
+  8,
+  16
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_t8_300.json",
+ "started": "2026-09-29T00:21:39Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 8,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 141.79,
+   "warm_agg_out_tok_s": 497.7,
+   "steady_agg_out_tok_s": 616.1,
+   "ttft_p90_s": 0.62,
+   "ttft_p99_s": 1.63,
+   "ttft_max_s": 1.63,
+   "turn_wall_p50_s": 1.81,
+   "turn_wall_p90_s": 3.64,
+   "turn_wall_p99_s": 6.85,
+   "tail_last10pct_s": 5.6,
+   "warm_session_rate_sum": 845.5,
+   "warm_ttft_p50_s": 0.21,
+   "hit_rate": 0.9613,
+   "mean_prompt_tokens": 104685,
+   "mean_out_tokens": 240.5,
+   "accept_len": 3.6
+  },
+  {
+   "repeat": 0,
+   "sessions": 16,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 86.6,
+   "warm_agg_out_tok_s": 716.4,
+   "steady_agg_out_tok_s": 819.8,
+   "ttft_p90_s": 0.73,
+   "ttft_p99_s": 2.25,
+   "ttft_max_s": 2.61,
+   "turn_wall_p50_s": 3.8,
+   "turn_wall_p90_s": 7.05,
+   "turn_wall_p99_s": 11.01,
+   "tail_last10pct_s": 5.2,
+   "warm_session_rate_sum": 1031.0,
+   "warm_ttft_p50_s": 0.26,
+   "hit_rate": 0.9596,
+   "mean_prompt_tokens": 96440,
+   "mean_out_tokens": 254.4,
+   "accept_len": 3.51
+  },
+  {
+   "repeat": 1,
+   "sessions": 8,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 138.36,
+   "warm_agg_out_tok_s": 503.2,
+   "steady_agg_out_tok_s": 614.5,
+   "ttft_p90_s": 0.75,
+   "ttft_p99_s": 1.72,
+   "ttft_max_s": 1.72,
+   "turn_wall_p50_s": 1.92,
+   "turn_wall_p90_s": 3.94,
+   "turn_wall_p99_s": 6.96,
+   "tail_last10pct_s": 5.3,
+   "warm_session_rate_sum": 837.0,
+   "warm_ttft_p50_s": 0.22,
+   "hit_rate": 0.9613,
+   "mean_prompt_tokens": 104685,
+   "mean_out_tokens": 240.0,
+   "accept_len": 3.58
+  },
+  {
+   "repeat": 1,
+   "sessions": 16,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 78.57,
+   "warm_agg_out_tok_s": 702.0,
+   "steady_agg_out_tok_s": 799.9,
+   "ttft_p90_s": 0.74,
+   "ttft_p99_s": 1.98,
+   "ttft_max_s": 2.02,
+   "turn_wall_p50_s": 3.15,
+   "turn_wall_p90_s": 6.98,
+   "turn_wall_p99_s": 9.94,
+   "tail_last10pct_s": 5.7,
+   "warm_session_rate_sum": 1084.1,
+   "warm_ttft_p50_s": 0.26,
+   "hit_rate": 0.9596,
+   "mean_prompt_tokens": 96440,
+   "mean_out_tokens": 253.0,
+   "accept_len": 3.38
+  }
+ ],
+ "booted": true,
+ "boot_min": 16.3,
+ "kv_pool_tokens": [
+  2217216
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-862f8504-99de-1783-4c28-b139a16e2701",
+   "GPU-ad1cbbe5-a6a7-a86f-96b6-1c915155771b",
+   "GPU-e1c75274-73d0-9d36-2f3c-b215ea7103b8",
+   "GPU-2dd5bd58-dee6-3805-1c45-24205f38bc48",
+   "GPU-e888ea2a-4195-5e1a-0b79-ad565cc2dd6e",
+   "GPU-f648f94d-c21a-6707-53d7-3cb4ae457575",
+   "GPU-92e6dbc5-b1e3-3480-ece5-bce301da105a",
+   "GPU-cd9e9775-ddaf-2c9f-6df1-6571549d4b14"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/glm-5.3_fast_20260928-235637/accuracy_final_glmfast_mixed.json",
+  "seconds": 128.2,
+  "prompts_source": "sessions:real_sessions_t8_300.json",
+  "gsm8k_acc": 0.955,
+  "verdict": {
+   "pass": false,
+   "checks": {
+    "inputs_identical": true,
+    "kl_mean": false,
+    "kl_p99": false,
+    "top1_agree": false,
+    "dlp_p99": false,
+    "em_paired": true
+   },
+   "thresholds": {
+    "kl_mean_max": 0.01,
+    "kl_p99_max": 0.25,
+    "top1_agree_min": 0.97,
+    "dlp_p99_max": 0.5,
+    "em_drop_max_pts": 2.0,
+    "em_p_max": 0.1,
+    "em_drop_hard_pts": 5.0
+   },
+   "within_noise": null,
+   "noise_given": false,
+   "tf_skipped": false,
+   "note": null
+  },
+  "metrics": {
+   "tf": {
+    "prompts": 200,
+    "positions": 51200,
+    "mismatched_prompts": [],
+    "kl_mean": 0.1862233297948359,
+    "kl_p99": 3.9426601814369815,
+    "kl_max": 12.704290173677215,
+    "top1_agree": 0.8952734375,
+    "dlp_mean": 0.3051264725390625,
+    "dlp_p99": 5.077232490000002,
+    "dlp_max": 18.769721
+   },
+   "em": {
+    "items": 200,
+    "acc_control": 0.96,
+    "acc_arm": 0.955,
+    "drop_pts": 0.5000000000000004,
+    "control_only_correct": 3,
+    "arm_only_correct": 2,
+    "answer_changed": 9,
+    "mcnemar_p_arm_worse": 0.5
+   }
+  }
+ },
+ "sessions_dropped_oversize": 9,
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 68,
+  "accept_len_mean": 3.634,
+  "accept_len_p10": 3.21,
+  "accept_len_p50": 3.64,
+  "accept_len_p90": 4.06,
+  "accept_rate_mean": 0.659
+ },
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ }
+}

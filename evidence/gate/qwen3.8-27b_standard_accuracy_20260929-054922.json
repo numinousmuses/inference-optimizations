@@ -1,0 +1,64 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.8-27b_standard_20260929-004044",
+ "control": "qwen38_standard_m80",
+ "control_found": true,
+ "arms": {
+  "kv4tri_q38_fp8": {
+   "control": "qwen38_standard_m80",
+   "arm": "kv4tri_q38_fp8",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.2152564659074057,
+     "kl_p99": 6.944277973914331,
+     "kl_max": 22.087960720810155,
+     "top1_agree": 0.9383203125,
+     "dlp_mean": 0.26548215470703124,
+     "dlp_p99": 6.015549050000003,
+     "dlp_max": 26.16893
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.88,
+     "acc_arm": 0.84,
+     "drop_pts": 4.0000000000000036,
+     "control_only_correct": 11,
+     "arm_only_correct": 3,
+     "answer_changed": 29,
+     "mcnemar_p_arm_worse": 0.0286865234375
+    }
+   },
+   "verdict": {
+    "pass": false,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": false,
+     "kl_p99": false,
+     "top1_agree": false,
+     "dlp_p99": false,
+     "em_paired": false
+    },
+    "thresholds": {
+     "kl_mean_max": 0.01,
+     "kl_p99_max": 0.25,
+     "top1_agree_min": 0.97,
+     "dlp_p99_max": 0.5,
+     "em_drop_max_pts": 2.0,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": null,
+    "noise_given": false,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "kv4tri_q38_nvfp4": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}

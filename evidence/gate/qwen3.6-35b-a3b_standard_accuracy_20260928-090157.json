@@ -1,0 +1,22 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260928-082358",
+ "control": "v20_stock_q36",
+ "control_found": true,
+ "arms": {
+  "qwen36_dspark_koopah": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_dspark_redhat": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_dflash_modal": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}

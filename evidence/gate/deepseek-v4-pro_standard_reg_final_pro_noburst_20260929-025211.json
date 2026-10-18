@@ -1,0 +1,153 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "final_pro_noburst",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "flags_remove": [
+   "--moe-runner-backend",
+   "--chunked-prefill-size"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion",
+   "--chunked-prefill-size",
+   "65536",
+   "--num-continuous-decode-steps",
+   "1",
+   "--dsv4-attn-backend",
+   "trtllm"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/dp_extend_cap_hooks.py": "!run",
+   "operations/patches/pro_small_kernel_hooks.py": "!run",
+   "operations/patches/spec_hooks.py": "!run pro_attn",
+   "operations/patches/trtllm_attn_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_DP_EXTEND_CAP": "0",
+   "NUMINOUS_NORM_QUANT": "1",
+   "NUMINOUS_FP8_LM_HEAD": "1",
+   "NUMINOUS_DSV4_UNIFORM_POOL_BYTES": "1"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--chunked-prefill-size",
+  "65536",
+  "--num-continuous-decode-steps",
+  "1",
+  "--dsv4-attn-backend",
+  "trtllm"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-29T02:50:56Z",
+ "runs": [],
+ "booted": false,
+ "boot_min": 1.3,
+ "kv_pool_tokens": null,
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-9784284c-64df-ecc1-94e4-bf86f43ea199",
+   "GPU-fa0e7840-b674-677c-cae0-32010ea170a6",
+   "GPU-dfe04494-e9e4-c8bc-db4f-64c39dc77f32",
+   "GPU-a57e0a30-c0f7-6ad6-dd4b-d56535828919",
+   "GPU-8faba028-111d-d3de-22e7-e80ac533f525",
+   "GPU-e7908292-033e-4ff9-8ddd-8de2dc05f84a",
+   "GPU-cdba0490-db46-d7f3-1fb9-8663be666d57",
+   "GPU-1d985ec4-485b-0af9-7611-8924b49ba44e"
+  ]
+ },
+ "root_cause": [
+  "...",
+  "[2026-09-29 02:52:03] DataParallelController hit an exception: Traceback (most recent call last):",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py\", line 853, in run_data_parallel_controller_process",
+  "    controller = DataParallelController(",
+  "                 ^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py\", line 207, in __init__",
+  "    self.launch_dp_attention_schedulers(server_args, port_args)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py\", line 599, in launch_dp_attention_schedulers",
+  "    self.launch_tensor_parallel_group(",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/data_parallel_controller.py\", line 744, in launch_tensor_parallel_group",
+  "    scheduler_info.append(scheduler_pipe_readers[i].recv())",
+  "                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/usr/lib/python3.12/multiprocessing/connection.py\", line 250, in recv",
+  "    buf = self._recv_bytes()",
+  "          ^^^^^^^^^^^^^^^^^^",
+  "  File \"/usr/lib/python3.12/multiprocessing/connection.py\", line 430, in _recv_bytes",
+  "    buf = self._recv(4)",
+  "          ^^^^^^^^^^^^^",
+  "  File \"/usr/lib/python3.12/multiprocessing/connection.py\", line 399, in _recv",
+  "    raise EOFError",
+  "EOFError",
+  "[2026-09-29 02:52:03] Received sigquit from a child process. It usually means the child failed.",
+  "[2026-09-29 02:52:03] kill_process_tree called: parent_pid=4, include_parent=True, pid=4",
+  "... error lines:",
+  "... tail:",
+  "  File \"/usr/lib/python3.12/multiprocessing/connection.py\", line 430, in _recv_bytes",
+  "    buf = self._recv(4)",
+  "          ^^^^^^^^^^^^^",
+  "  File \"/usr/lib/python3.12/multiprocessing/connection.py\", line 399, in _recv",
+  "    raise EOFError",
+  "EOFError",
+  "[2026-09-29 02:52:03] Received sigquit from a child process. It usually means the child failed.",
+  "[2026-09-29 02:52:03] kill_process_tree called: parent_pid=4, include_parent=True, pid=4"
+ ]
+}

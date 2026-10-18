@@ -1,0 +1,219 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "v20_megamoe_w4a4_bal+v20_fp4idx",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion",
+   "--enable-deepseek-v4-fp4-indexer"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1"
+  },
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20260928-162428",
+  "_acc_control": "v20_megamoe_w4a4_bal"
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--chunked-prefill-size",
+  "32768",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--enable-deepseek-v4-fp4-indexer"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-28T16:35:22Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 43.74,
+   "warm_agg_out_tok_s": 1381.2,
+   "steady_agg_out_tok_s": 1770.9,
+   "ttft_p90_s": 4.09,
+   "ttft_p99_s": 6.35,
+   "ttft_max_s": 7.98,
+   "turn_wall_p50_s": 6.51,
+   "turn_wall_p90_s": 11.82,
+   "turn_wall_p99_s": 15.11,
+   "tail_last10pct_s": 13.2,
+   "warm_session_rate_sum": 2048.8,
+   "warm_ttft_p50_s": 1.31,
+   "hit_rate": 0.9371,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 232.4,
+   "accept_len": 4.29
+  },
+  {
+   "repeat": 0,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 29.55,
+   "warm_agg_out_tok_s": 2078.1,
+   "steady_agg_out_tok_s": 2595.1,
+   "ttft_p90_s": 5.14,
+   "ttft_p99_s": 7.68,
+   "ttft_max_s": 8.95,
+   "turn_wall_p50_s": 10.41,
+   "turn_wall_p90_s": 17.27,
+   "turn_wall_p99_s": 22.02,
+   "tail_last10pct_s": 15.0,
+   "warm_session_rate_sum": 2931.5,
+   "warm_ttft_p50_s": 1.99,
+   "hit_rate": 0.9385,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 249.2,
+   "accept_len": 4.28
+  },
+  {
+   "repeat": 1,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 42.5,
+   "warm_agg_out_tok_s": 1374.6,
+   "steady_agg_out_tok_s": 1784.2,
+   "ttft_p90_s": 3.58,
+   "ttft_p99_s": 6.86,
+   "ttft_max_s": 8.38,
+   "turn_wall_p50_s": 6.33,
+   "turn_wall_p90_s": 11.63,
+   "turn_wall_p99_s": 16.65,
+   "tail_last10pct_s": 14.5,
+   "warm_session_rate_sum": 2000.8,
+   "warm_ttft_p50_s": 1.65,
+   "hit_rate": 0.9373,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 227.7,
+   "accept_len": 4.25
+  },
+  {
+   "repeat": 1,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 28.07,
+   "warm_agg_out_tok_s": 2108.4,
+   "steady_agg_out_tok_s": 2602.2,
+   "ttft_p90_s": 4.89,
+   "ttft_p99_s": 8.4,
+   "ttft_max_s": 9.59,
+   "turn_wall_p50_s": 9.69,
+   "turn_wall_p90_s": 18.76,
+   "turn_wall_p99_s": 26.56,
+   "tail_last10pct_s": 15.4,
+   "warm_session_rate_sum": 2881.9,
+   "warm_ttft_p50_s": 1.75,
+   "hit_rate": 0.9383,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 246.3,
+   "accept_len": 4.29
+  }
+ ],
+ "booted": true,
+ "boot_min": 19.8,
+ "kv_pool_tokens": [
+  1412096
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-2292e9a1-7c5a-20f8-e41f-5af2ad6a5807",
+   "GPU-53d981b9-7ada-5062-b75c-659766e4d037",
+   "GPU-c6d78939-1d52-9474-2410-392183cefa84",
+   "GPU-f37039c6-96f5-bb14-22d0-bfcf852df98e",
+   "GPU-d0341394-6991-a6fa-d656-4cd9b8398016",
+   "GPU-f1a59780-f87c-707c-c410-2e10b6b3c112",
+   "GPU-fa020ecf-6eae-6584-090b-edf9899eb814",
+   "GPU-9ee96239-d033-7478-73fe-8943b6d98c58"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/deepseek-v4-pro_standard_20260928-162428/accuracy_v20_megamoe_w4a4_bal+v20_fp4idx.json",
+  "seconds": 79.2,
+  "prompts_source": "sessions:real_sessions_dsv4_46k_t8_420.json",
+  "gsm8k_acc": 0.975
+ },
+ "sessions_dropped_oversize": 14,
+ "dp_peak_running": {
+  "0": 23,
+  "1": 20,
+  "2": 24,
+  "3": 20,
+  "4": 24,
+  "5": 21,
+  "6": 22,
+  "7": 21
+ },
+ "numinous_log": [
+  "[2026-09-28 16:55:10 DP3 TP3 EP3] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-28 16:56:01 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [4051, 4096, 4096, 4096, 4096, 4096, 4096, 4096], rank rows 4051 -> 4091"
+ ],
+ "spec_acceptance": {
+  "samples": 409,
+  "accept_len_mean": 4.325,
+  "accept_len_p10": 3.81,
+  "accept_len_p50": 4.35,
+  "accept_len_p90": 4.77,
+  "accept_rate_mean": 0.665
+ },
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ }
+}

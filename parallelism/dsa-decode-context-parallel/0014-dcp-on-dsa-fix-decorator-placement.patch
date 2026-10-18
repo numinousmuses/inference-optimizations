@@ -1,0 +1,29 @@
+From 3ffb53aa20fca79ae3266e2d1c072be12d46d7f4 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 04:32:07 +0000
+Subject: [PATCH] dcp on dsa: fix decorator placement
+
+---
+ python/sglang/srt/layers/attention/dsa_backend.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 957b83a2a..2b295303a 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -168,11 +168,11 @@ def _to_2d_context_lens(seqlens_32: torch.Tensor, batch_size: int) -> torch.Tens
+     return seqlens_32.contiguous().view(-1, 1)
+ 
+ 
+-@dataclass(frozen=True)
+ def _dcp_extend_local_shard() -> bool:
+     return os.environ.get("SGLANG_DSA_DCP_EXTEND", "gather") == "local"
+ 
+ 
++@dataclass(frozen=True)
+ class DSAFlashMLAMetadata:
+     """Metadata only needed by FlashMLA"""
+ 
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1,0 +1,71 @@
+From bdfd9ce780d88e7bba1774ab37576659e22092c3 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 04:15:08 +0000
+Subject: [PATCH] dcp on dsa: gathered-prefix extend is the default again;
+ local-shard extend behind SGLANG_DSA_DCP_EXTEND=local (correct, but merge
+ traffic makes prefill slower)
+
+---
+ python/sglang/srt/layers/attention/dsa_backend.py   | 13 ++++++++++---
+ .../attention_forward_methods/forward_mla.py        |  7 ++++++-
+ 2 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 34826ab7e..957b83a2a 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ import logging
++import os
+ from dataclasses import dataclass
+ from typing import (
+     TYPE_CHECKING,
+@@ -168,6 +169,10 @@ def _to_2d_context_lens(seqlens_32: torch.Tensor, batch_size: int) -> torch.Tens
+ 
+ 
+ @dataclass(frozen=True)
++def _dcp_extend_local_shard() -> bool:
++    return os.environ.get("SGLANG_DSA_DCP_EXTEND", "gather") == "local"
++
++
+ class DSAFlashMLAMetadata:
+     """Metadata only needed by FlashMLA"""
+ 
+@@ -2047,9 +2052,11 @@ class DeepseekSparseAttnBackend(
+                 v_head_dim=layer.v_head_dim,
+             )
+         elif dsa_impl in ("flashmla_sparse", "flashmla_sparse_q8"):
+-            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_extend_without_speculative():
+-                # Numinous DCP extend: gathered query heads, local KV shard, (o, lse) for the cross-rank merge.
+-                # Uses the indexer's positions directly, whichever top-k transform produced page_table_1.
++            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_extend_without_speculative() and _dcp_extend_local_shard():
++                # Numinous DCP extend, local-shard variant: gathered query heads, attention over this rank's KV shard,
++                # (o, lse) into the merge. Correct (6/6 on the probe) but slower than the gathered prefix for prefill:
++                # the merge moves tokens x heads x dims per layer where the gather moves prefix x 656 bytes. Kept
++                # behind SGLANG_DSA_DCP_EXTEND=local for long prefixes with short chunks.
+                 positions = self._pad_topk_indices(topk_indices, q_nope.shape[0]) if topk_indices is not None else None
+                 return self._forward_dcp_extend_local(
+                     q_nope, q_rope, layer, forward_batch, metadata, positions,
+diff --git a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+index e3c457b5b..905753eda 100644
+--- a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
++++ b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+@@ -102,7 +102,12 @@ def is_dcp_mla_decode_phase(forward_batch: ForwardBatch, attention_backend: Opti
+         return False
+     if forward_batch.forward_mode.is_decode() or forward_batch.forward_mode.is_target_verify():
+         return True
+-    return attention_backend in ("dsa", "nsa") and forward_batch.forward_mode.is_extend_without_speculative()
++    import os
++    return (
++        attention_backend in ("dsa", "nsa")
++        and forward_batch.forward_mode.is_extend_without_speculative()
++        and os.environ.get("SGLANG_DSA_DCP_EXTEND", "gather") == "local"
++    )
+ 
+ 
+ def is_mla_dcp_lse_base_on_e(attention_backend: Optional[str]) -> bool:
+-- 
+2.50.1 (Apple Git-155)
+

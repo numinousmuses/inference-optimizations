@@ -1,0 +1,31 @@
+{
+ "model": "deepseek-ai/DeepSeek-V4-Pro-0813",
+ "silicon": "8x B200",
+ "status": "KEPT 2026-09-21 (warm OR-shape cells added)",
+ "lanes": {
+  "std_prompt_heavy": {
+   "flags": "vendor pro-bal (dp8+megamoe, swa 0.1, graphs 256)",
+   "cell": "8k/b256 9,073@35.4 - keeps std on prefill blend"
+  },
+  "decode+fast": {
+   "flags_delta": "pro-ll DSPARK + mrr 320",
+   "cell": "8k/b192 13,036@67.9, b256 13,975@54.6 (+54%); 65k/b45 6,935@154"
+  },
+  "std_or_shape": {
+   "flags_delta": "production PRO_DSPARK; admission >=128",
+   "cell": "c=256: 4,941@170 (202 running) +31%; 128k c=32/64: 15 running, 2.2-2.3k tok/s",
+   "evidence": "pool_program/pro_deep_*.json, pro_bf16_*.json"
+  }
+ },
+ "rules": [
+  "MLA-latent KV: fp8-KV is a wash and does NOT grow pool - dead axis",
+  "bal384 (graphs 544, mrr 384): +15% agg but loses prefill blend - decode tier only",
+  "jarrelscy 0813-NVFP4 init-crashes; nvidia NVFP4 is April-base (WRONG release) - own modelopt export is the standing 4-bit path",
+  "TBO: image's DeepseekV2MoE lacks runtime ep_size on Pro-0813 path; upstream main:840 has the fix - retest each image release",
+  "--kv-cache-dtype is not a lever: the dsv4 backend already stores compressed KV as fp8 nope + bf16 rope (layers/attention/dsv4/compressor*.py).",
+  "DCP8 leaves the pool at 3.24M and dies under load. Pool 3.31M tokens at fraction 0.90.",
+  "128k sessions admit only ~15: suspect --swa-full-tokens-ratio 0.1 (full-attention pool = 10% of tokens). Untested lever: raise the ratio for a long-context lane.",
+  "Scheduler init SIGKILL (rank 4) on 3 of 5 boots this run; same flags booted twice. Init flake, retry."
+ ],
+ "evidence": "numinous-inference/research/gpu-evidence/pro_opt{,2,3,4,5,6,7}.json"
+}

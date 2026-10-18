@@ -1,0 +1,91 @@
+{
+ "cell": "gemma-4-26b-a4b/standard",
+ "arm": "kv4tri_gemma_noise",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "overlay": {
+   "operations/patches/gemma_extend_hooks.py": "!run"
+  },
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "RTXPRO6000",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/gemma-4-26b-a4b_standard_20260929-024904",
+  "_acc_control": "gemma_standard_v20"
+ },
+ "config_digest": "3c6a1a658c086425",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--moe-runner-backend",
+  "flashinfer_cutlass",
+  "--mem-fraction-static",
+  "0.86",
+  "--scheduler-recv-interval",
+  "16",
+  "--max-running-requests",
+  "320",
+  "--swa-full-tokens-ratio",
+  "0.10",
+  "--reasoning-parser",
+  "gemma4",
+  "--tool-call-parser",
+  "gemma4"
+ ],
+ "ladder": [
+  1
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-29T02:49:11Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 1,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 60.45,
+   "warm_agg_out_tok_s": 47.0,
+   "steady_agg_out_tok_s": null,
+   "ttft_p90_s": 2.6,
+   "ttft_p99_s": 2.6,
+   "ttft_max_s": 2.6,
+   "turn_wall_p50_s": 9.06,
+   "turn_wall_p90_s": 9.06,
+   "turn_wall_p99_s": 9.06,
+   "tail_last10pct_s": null,
+   "warm_session_rate_sum": 47.0,
+   "warm_ttft_p50_s": 1.91,
+   "hit_rate": 0.8782,
+   "mean_prompt_tokens": 116229,
+   "mean_out_tokens": 400.0,
+   "accept_len": null
+  }
+ ],
+ "booted": true,
+ "boot_min": 2.3,
+ "kv_pool_tokens": [
+  3260587
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-279d6b29-2f8b-17ae-49dc-774051406ee3"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/gemma-4-26b-a4b_standard_20260929-024904/accuracy_kv4tri_gemma_noise.json",
+  "seconds": 159.8,
+  "prompts_source": "sessions:real_sessions_240.json",
+  "gsm8k_acc": 0.945
+ },
+ "sessions_dropped_oversize": 1,
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 0
+ }
+}

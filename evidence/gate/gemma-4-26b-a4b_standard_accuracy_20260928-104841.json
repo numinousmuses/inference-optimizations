@@ -1,0 +1,12 @@
+{
+ "acc_dir": "/cache/accuracy/gemma-4-26b-a4b_standard_20260928-104027",
+ "control": "v20_stock",
+ "control_found": true,
+ "arms": {
+  "gemma_fp8_qosliding": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}

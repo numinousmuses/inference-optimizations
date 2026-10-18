@@ -1,0 +1,27 @@
+From c0327fe642042c8a19e1f61dbbf16ca0f84fecc0 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 02:18:56 +0000
+Subject: [PATCH] dcp on dsa: draft extend offsets use the fixed draft width
+
+---
+ python/sglang/srt/layers/attention/dsa_backend.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index bb4bfb6b8..9ae08b905 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -2161,7 +2161,9 @@ class DeepseekSparseAttnBackend(
+                 # (request-contiguous [prefix | extend]) with the bf16 sparse kernel and returns a plain tensor.
+                 kv_gathered = self._gather_dcp_prefix_kv(forward_batch, layer, k, k_rope)
+                 positions = self._pad_topk_indices(topk_indices, q_all.shape[0])
+-                offsets = torch.repeat_interleave(metadata.cu_seqlens_k[:-1], forward_batch.extend_seq_lens)
++                # draft extend v2 extends every request by the same fixed draft width: rows = bs x width
++                per_req = q_all.shape[0] // max(forward_batch.batch_size, 1)
++                offsets = torch.repeat_interleave(metadata.cu_seqlens_k[: forward_batch.batch_size], per_req)
+                 ragged = torch.where(positions >= 0, positions + offsets.unsqueeze(1), positions)
+                 return self._forward_flashmla_sparse(
+                     q_all=q_all, kv_cache=kv_gathered, page_table_1=ragged, sm_scale=layer.scaling, v_head_dim=layer.v_head_dim,
+-- 
+2.50.1 (Apple Git-155)
+

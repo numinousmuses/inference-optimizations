@@ -1,0 +1,157 @@
+From 65fc036e657f3f0d1f5680e4001d63b3607850f0 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 03:25:12 +0000
+Subject: [PATCH] dcp on dsa: extend joins the merge phase. Query heads
+ gathered, attention over this rank's KV shard (one eighth of the
+ dequantisation, 2x head padding instead of 16x), (o, lse in base e) into the
+ cross-rank merge; no prefix gather. Draft extend keeps the gathered path.
+
+---
+ .../srt/layers/attention/dsa_backend.py       | 61 +++++++++++++++++++
+ .../attention_forward_methods/forward_mla.py  | 21 ++++---
+ 2 files changed, 73 insertions(+), 9 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 9ae08b905..ee4061409 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -1974,6 +1974,15 @@ class DeepseekSparseAttnBackend(
+ 
+             page_table_1 = self._get_fused_topk_page_table(topk_indices)
+         else:
++            if (
++                topk_transform_method == TopkTransformMethod.RAGGED
++                and get_parallel().dcp_enabled
++                and forward_batch.forward_mode.is_extend_without_speculative()
++            ):
++                # Numinous DCP extend: gathered query heads, local KV shard, (o, lse) for the cross-rank merge
++                if topk_indices is not None:
++                    topk_indices = self._pad_topk_indices(topk_indices, q_nope.shape[0])
++                return self._forward_dcp_extend_local(q_nope, q_rope, layer, forward_batch, metadata, topk_indices)
+             if topk_transform_method == TopkTransformMethod.RAGGED:
+                 if topk_indices is not None:
+                     topk_indices = self._pad_topk_indices(topk_indices, q_nope.shape[0])
+@@ -2957,6 +2966,58 @@ class DeepseekSparseAttnBackend(
+             e0 += el
+         return torch.cat(parts, dim=0).unsqueeze(1)
+ 
++    def _forward_dcp_extend_local(self, q_nope, q_rope, layer, forward_batch: ForwardBatch, metadata, topk_indices):
++        """Numinous DCP extend over this rank's KV shard. Positions p with p % dcp == rank live at local slot p // dcp.
++        The indexer selected global positions; keep the owned ones, address them in a per-rank dequantised
++        request-contiguous copy of the local shard, run the bf16 sparse kernel with all gathered query heads and
++        hand (o, lse in base e) to the merge."""
++        from sgl_kernel.flash_mla import flash_mla_sparse_fwd
++        from sglang.srt.layers.dcp.layout import get_dcp_lens
++
++        parallel = get_parallel()
++        dcp, rank = parallel.attn_dcp_size, parallel.attn_dcp_rank
++        bs = forward_batch.batch_size
++        seq_lens = forward_batch.seq_lens[:bs]
++        local_lens = get_dcp_lens(seq_lens, dcp, rank)                                    # [bs]
++        pt = metadata.page_table_1[:bs]                                                   # [bs, max_seqlen] virtual slots
++        pt_local = pt[:, rank::dcp]                                                       # owned positions in order
++        # flatten the owned rows of every request: mask by local length, take the valid entries in row-major order
++        width = pt_local.shape[1]
++        valid = torch.arange(width, device=pt.device).unsqueeze(0) < local_lens.unsqueeze(1)
++        flat_virtual = pt_local[valid]
++        flat_local = flat_virtual // dcp
++        kv_layer = self.token_to_kv_pool.get_key_buffer(layer.layer_id)
++        if self.dsa_kv_cache_store_fp8:
++            kv_local = dequantize_k_cache_paged(kv_layer, flat_local)
++        else:
++            kv_local = kv_layer[flat_local].to(q_nope.dtype)
++        kv_local = kv_local.view(kv_local.shape[0], 1, -1)
++        cu_local = torch.cumsum(local_lens, dim=0) - local_lens                            # exclusive
++        per_token_offset = torch.repeat_interleave(cu_local, forward_batch.extend_seq_lens[:bs])
++        if per_token_offset.shape[0] != topk_indices.shape[0]:                             # padded rows
++            pad = topk_indices.shape[0] - per_token_offset.shape[0]
++            per_token_offset = torch.cat([per_token_offset, per_token_offset.new_zeros(max(pad, 0))])[: topk_indices.shape[0]]
++        pos = topk_indices.to(torch.int64)
++        owned = (pos >= 0) & (pos % dcp == rank)
++        local_pos = torch.where(owned, pos // dcp + per_token_offset.unsqueeze(1), torch.full_like(pos, -1))
++        indices = local_pos.to(torch.int32)
++        counts = (indices >= 0).sum(dim=-1)
++        q_all = concat_mla_absorb_q_general(q_nope, q_rope)
++        num_tokens, num_heads, head_dim = q_all.shape
++        required = 128 if self.device_sm_major >= 10 else 64
++        if num_heads % required != 0:
++            q_in = q_all.new_zeros((num_tokens, required, head_dim))
++            q_in[:, :num_heads] = q_all
++        else:
++            q_in = q_all
++        o, _, lse2 = flash_mla_sparse_fwd(q=q_in, kv=kv_local, indices=indices.unsqueeze(1), sm_scale=layer.scaling, d_v=layer.v_head_dim)
++        o = o[:, :num_heads].contiguous()
++        lse = (lse2[:, :num_heads].float() * 0.6931471805599453)                            # 2-based -> e-based
++        empty = (counts == 0).view(-1, 1)
++        o = torch.where(empty.unsqueeze(-1), torch.zeros_like(o), o)
++        lse = torch.where(empty, torch.full_like(lse, float("-inf")), lse)
++        return o, lse
++
+     def _forward_flashmla_kv_dcp(
+         self,
+         q_all: torch.Tensor,
+diff --git a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+index 2055933a9..e3c457b5b 100644
+--- a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
++++ b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+@@ -93,13 +93,16 @@ def _select_local_dcp_heads_for_autotune(
+     return attn_output.narrow(1, rank * num_local_heads, num_local_heads)
+ 
+ 
+-def is_dcp_mla_decode_phase(forward_batch: ForwardBatch) -> bool:
++def is_dcp_mla_decode_phase(forward_batch: ForwardBatch, attention_backend: Optional[str] = None) -> bool:
++    """Phases where the query heads are gathered across DCP ranks, attention runs over the local KV shard and the
++    partial outputs are merged by LSE. Dense MLA does this for decode and verify and gathers the KV for extend.
++    Numinous: the DSA backend does it for plain extend too (no prefix gather, one eighth of the dequantisation per
++    rank, 2x head padding instead of 16x); the draft's extend keeps the gathered-prefix path."""
+     if not get_parallel().dcp_enabled:
+         return False
+-    return (
+-        forward_batch.forward_mode.is_decode()
+-        or forward_batch.forward_mode.is_target_verify()
+-    )
++    if forward_batch.forward_mode.is_decode() or forward_batch.forward_mode.is_target_verify():
++        return True
++    return attention_backend in ("dsa", "nsa") and forward_batch.forward_mode.is_extend_without_speculative()
+ 
+ 
+ def is_mla_dcp_lse_base_on_e(attention_backend: Optional[str]) -> bool:
+@@ -299,7 +302,7 @@ class DeepseekMLAForwardMixin:
+         # weights and skip the per-layer Q all-gather (bf16 decode absorb only).
+         q_replicate_active = (
+             get_parallel().dcp_replicate_q_proj
+-            and is_dcp_mla_decode_phase(forward_batch)
++            and is_dcp_mla_decode_phase(forward_batch, self.current_attention_backend)
+             and not self.use_deep_gemm_bmm
+             and self.w_kc_qrep is not None
+             and self.q_b_proj_qrep_weight is not None
+@@ -620,7 +623,7 @@ class DeepseekMLAForwardMixin:
+ 
+         # all_gather q_pe, q_nope_out,take tp8 as an example， q_pe [B, H, ROPE_DIM], q_nope_out [B, H, NOPE_DIM] gathered to [B, H * dcp_world_size, ROPE_DIM] [B, H * dcp_world_size, NOPE_DIM] for decode batch, and all gather k_pe, k_nope for extend batch.
+         if get_parallel().dcp_enabled:
+-            if is_dcp_mla_decode_phase(forward_batch):
++            if is_dcp_mla_decode_phase(forward_batch, self.current_attention_backend):
+                 if not q_replicate_active:
+                     q_nope_out, q_pe = all_gather_q_for_mla_decode(
+                         q_nope_out=q_nope_out,
+@@ -708,7 +711,7 @@ class DeepseekMLAForwardMixin:
+                     topk_indices=topk_indices,
+                 )
+                 attn_output = fusion_plan.attn_output_buf
+-            elif is_dcp_mla_decode_phase(forward_batch):
++            elif is_dcp_mla_decode_phase(forward_batch, self.current_attention_backend):
+                 # set return_lse=True to correct attn_output
+                 attn_output, lse = self.attn_mqa_for_dcp_decode(
+                     q_nope_out,
+@@ -757,7 +760,7 @@ class DeepseekMLAForwardMixin:
+             )
+ 
+         # correct attn_output with respect to lse from other ranks
+-        if is_dcp_mla_decode_phase(forward_batch):
++        if is_dcp_mla_decode_phase(forward_batch, self.current_attention_backend):
+             attn_output = attn_output.view(
+                 -1,
+                 self.num_local_heads * get_parallel().attn_dcp_size,
+-- 
+2.50.1 (Apple Git-155)
+

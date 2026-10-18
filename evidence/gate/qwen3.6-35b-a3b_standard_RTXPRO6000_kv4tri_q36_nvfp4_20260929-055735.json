@@ -1,0 +1,215 @@
+{
+ "cell": "qwen3.6-35b-a3b/standard",
+ "arm": "kv4tri_q36_nvfp4",
+ "delta": {
+  "flags_add": [
+   "--chunked-prefill-size",
+   "4096",
+   "--max-running-requests",
+   "64",
+   "--speculative-num-steps",
+   "4",
+   "--speculative-num-draft-tokens",
+   "5",
+   "--attention-backend",
+   "triton",
+   "--triton-attention-num-kv-splits",
+   "64",
+   "--kv-cache-dtype",
+   "nvfp4"
+  ],
+  "flags_remove": [
+   "--chunked-prefill-size",
+   "--max-running-requests",
+   "--speculative-num-steps",
+   "--speculative-num-draft-tokens",
+   "--attention-backend",
+   "--triton-attention-num-kv-splits",
+   "--kv-cache-dtype"
+  ],
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "overlay": {
+   "operations/patches/kv4tri_hooks.py": "!run"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "RTXPRO6000",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260929-045606",
+  "_acc_control": "qwen36_std_fullmamba_mtp4"
+ },
+ "config_digest": "4b0566893314e7c6",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--mem-fraction-static",
+  "0.85",
+  "--reasoning-parser",
+  "qwen3",
+  "--tool-call-parser",
+  "qwen3_coder",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-eagle-topk",
+  "1",
+  "--enable-linear-replayssm-spec",
+  "--moe-runner-backend",
+  "flashinfer_cutlass",
+  "--max-mamba-cache-size",
+  "512",
+  "--chunked-prefill-size",
+  "4096",
+  "--max-running-requests",
+  "64",
+  "--speculative-num-steps",
+  "4",
+  "--speculative-num-draft-tokens",
+  "5",
+  "--attention-backend",
+  "triton",
+  "--triton-attention-num-kv-splits",
+  "64",
+  "--kv-cache-dtype",
+  "nvfp4"
+ ],
+ "ladder": [
+  24,
+  44
+ ],
+ "repeats": 2,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-29T04:56:11Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 24,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 31.28,
+   "warm_agg_out_tok_s": 267.8,
+   "steady_agg_out_tok_s": 389.8,
+   "ttft_p90_s": 2.06,
+   "ttft_p99_s": 7.74,
+   "ttft_max_s": 7.74,
+   "turn_wall_p50_s": 10.93,
+   "turn_wall_p90_s": 25.36,
+   "turn_wall_p99_s": 30.55,
+   "tail_last10pct_s": 2.6,
+   "warm_session_rate_sum": 618.2,
+   "warm_ttft_p50_s": 0.59,
+   "hit_rate": 0.85,
+   "mean_prompt_tokens": 103116,
+   "mean_out_tokens": 270.8,
+   "accept_len": 3.28
+  },
+  {
+   "repeat": 0,
+   "sessions": 44,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 19.51,
+   "warm_agg_out_tok_s": 363.3,
+   "steady_agg_out_tok_s": 534.4,
+   "ttft_p90_s": 1.3,
+   "ttft_p99_s": 11.02,
+   "ttft_max_s": 11.02,
+   "turn_wall_p50_s": 15.54,
+   "turn_wall_p90_s": 37.59,
+   "turn_wall_p99_s": 42.82,
+   "tail_last10pct_s": 3.0,
+   "warm_session_rate_sum": 712.4,
+   "warm_ttft_p50_s": 0.62,
+   "hit_rate": 0.8992,
+   "mean_prompt_tokens": 98365,
+   "mean_out_tokens": 280.4,
+   "accept_len": 3.37
+  },
+  {
+   "repeat": 1,
+   "sessions": 24,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 21.9,
+   "warm_agg_out_tok_s": 292.9,
+   "steady_agg_out_tok_s": 423.7,
+   "ttft_p90_s": 2.18,
+   "ttft_p99_s": 8.53,
+   "ttft_max_s": 8.53,
+   "turn_wall_p50_s": 17.3,
+   "turn_wall_p90_s": 24.42,
+   "turn_wall_p99_s": 32.2,
+   "tail_last10pct_s": 1.4,
+   "warm_session_rate_sum": 529.5,
+   "warm_ttft_p50_s": 0.56,
+   "hit_rate": 0.9457,
+   "mean_prompt_tokens": 101654,
+   "mean_out_tokens": 320.3,
+   "accept_len": 3.39
+  },
+  {
+   "repeat": 1,
+   "sessions": 44,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 13.79,
+   "warm_agg_out_tok_s": 284.0,
+   "steady_agg_out_tok_s": 416.4,
+   "ttft_p90_s": 6.12,
+   "ttft_p99_s": 13.05,
+   "ttft_max_s": 13.05,
+   "turn_wall_p50_s": 27.26,
+   "turn_wall_p90_s": 54.41,
+   "turn_wall_p99_s": 68.05,
+   "tail_last10pct_s": 2.4,
+   "warm_session_rate_sum": 556.0,
+   "warm_ttft_p50_s": 0.76,
+   "hit_rate": 0.9063,
+   "mean_prompt_tokens": 94954,
+   "mean_out_tokens": 327.7,
+   "accept_len": 3.38
+  }
+ ],
+ "booted": true,
+ "boot_min": 6.6,
+ "kv_pool_tokens": [
+  4544366
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-a66d89fd-6288-e0cc-8758-3599ae09013f"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260929-045606/accuracy_kv4tri_q36_nvfp4.json",
+  "seconds": 118.5,
+  "prompts_source": "sessions:real_sessions_240.json",
+  "gsm8k_acc": 0.84
+ },
+ "sessions_dropped_oversize": 1,
+ "probes": {
+  "score": "5/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "misses": [
+   {
+    "probe": 5,
+    "expect": "The reservoir at Kellan Ridge held 529 million cubic metres in March and 979 million by July.",
+    "said": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - The user provides a long list of 708 numbered sentences.\n   - The question at the end is: \"Repeat sentence 653 exactly, then state every number in it as a comma-separated list.\"\n   - I need to locate sentence 653 in the provided text.\n   -"
+   }
+  ]
+ },
+ "numinous_log": [],
+ "spec_acceptance": {
+  "samples": 88,
+  "accept_len_mean": 3.67,
+  "accept_len_p10": 3.15,
+  "accept_len_p50": 3.56,
+  "accept_len_p90": 4.33,
+  "accept_rate_mean": 0.667
+ }
+}

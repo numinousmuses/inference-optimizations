@@ -1,0 +1,217 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "v20_megamoe_w4a4_bal+v20_extend_cap",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/dp_extend_cap_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_DP_EXTEND_CAP": "1"
+  },
+  "patches": [],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--chunked-prefill-size",
+  "32768",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-28T08:36:58Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 35.71,
+   "warm_agg_out_tok_s": 1135.3,
+   "steady_agg_out_tok_s": 1499.5,
+   "ttft_p90_s": 4.92,
+   "ttft_p99_s": 7.69,
+   "ttft_max_s": 10.36,
+   "turn_wall_p50_s": 8.01,
+   "turn_wall_p90_s": 14.63,
+   "turn_wall_p99_s": 19.08,
+   "tail_last10pct_s": 18.0,
+   "warm_session_rate_sum": 1651.8,
+   "warm_ttft_p50_s": 1.99,
+   "hit_rate": 0.9373,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 232.5,
+   "accept_len": 4.31
+  },
+  {
+   "repeat": 0,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 26.5,
+   "warm_agg_out_tok_s": 1803.9,
+   "steady_agg_out_tok_s": 2389.7,
+   "ttft_p90_s": 6.16,
+   "ttft_p99_s": 10.97,
+   "ttft_max_s": 11.43,
+   "turn_wall_p50_s": 11.61,
+   "turn_wall_p90_s": 19.46,
+   "turn_wall_p99_s": 24.63,
+   "tail_last10pct_s": 23.1,
+   "warm_session_rate_sum": 2607.6,
+   "warm_ttft_p50_s": 2.41,
+   "hit_rate": 0.9386,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 249.0,
+   "accept_len": 4.29
+  },
+  {
+   "repeat": 1,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 36.22,
+   "warm_agg_out_tok_s": 1123.0,
+   "steady_agg_out_tok_s": 1508.5,
+   "ttft_p90_s": 4.77,
+   "ttft_p99_s": 8.02,
+   "ttft_max_s": 8.21,
+   "turn_wall_p50_s": 8.11,
+   "turn_wall_p90_s": 14.64,
+   "turn_wall_p99_s": 19.59,
+   "tail_last10pct_s": 18.5,
+   "warm_session_rate_sum": 1694.9,
+   "warm_ttft_p50_s": 1.57,
+   "hit_rate": 0.9373,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 234.9,
+   "accept_len": 4.31
+  },
+  {
+   "repeat": 1,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 24.2,
+   "warm_agg_out_tok_s": 1726.4,
+   "steady_agg_out_tok_s": 2327.6,
+   "ttft_p90_s": 5.93,
+   "ttft_p99_s": 10.52,
+   "ttft_max_s": 13.08,
+   "turn_wall_p50_s": 11.94,
+   "turn_wall_p90_s": 20.99,
+   "turn_wall_p99_s": 27.05,
+   "tail_last10pct_s": 26.8,
+   "warm_session_rate_sum": 2525.5,
+   "warm_ttft_p50_s": 2.21,
+   "hit_rate": 0.9387,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 253.4,
+   "accept_len": 4.35
+  }
+ ],
+ "booted": true,
+ "boot_min": 25.1,
+ "kv_pool_tokens": [
+  1412096
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-147481fb-ad08-a747-a075-14970d5c9887",
+   "GPU-d05cd9a6-deb9-fb00-ca87-a329deb208a9",
+   "GPU-4b3520d0-be4c-ec6e-96b1-760b29bfd3d4",
+   "GPU-e66d4c03-e5ab-88bc-e093-e50e871cb3df",
+   "GPU-5636141c-7d7f-065d-915a-6723e1dec1df",
+   "GPU-5eef5a73-e19c-2ca8-e979-9e53463a7dca",
+   "GPU-3ea93c21-b642-c422-d81b-2c8ef53e5f40",
+   "GPU-152025bd-d21c-33b7-5e22-50f4d30372aa"
+  ]
+ },
+ "sessions_dropped_oversize": 14,
+ "dp_peak_running": {
+  "0": 16,
+  "1": 17,
+  "2": 16,
+  "3": 16,
+  "4": 15,
+  "5": 16,
+  "6": 16,
+  "7": 16
+ },
+ "numinous_log": [
+  "[2026-09-28 09:02:03 DP7 TP7 EP7] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-28 09:03:39 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [3942, 4096, 4096, 4096, 4096, 4096, 4096, 4096], rank rows 3942 -> 4077",
+  "[2026-09-28 09:05:48 DP2 TP2 EP2] numinous_dp_extend_cap active: chunk 4096 -> 1024 (cap 1024, align 256, last DP sync tokens [8, 8, 7, 8, 8, 8, 8, 8] extend [False, False, False, False, False, False, False, False])",
+  "[2026-09-28 09:05:48 DP4 TP4 EP4] numinous_dp_extend_cap active: chunk 4096 -> 1024 (cap 1024, align 256, last DP sync tokens [8, 8, 7, 8, 7, 8, 8, 8] extend [False, False, False, False, False, False, False, False])",
+  "[2026-09-28 09:05:49 DP3 TP3 EP3] numinous_dp_extend_cap active: chunk 4096 -> 1024 (cap 1024, align 256, last DP sync tokens [8, 7, 7, 7, 7, 8, 7, 8] extend [False, False, False, False, False, False, False, False])",
+  "[2026-09-28 09:05:49 DP7 TP7 EP7] numinous_dp_extend_cap active: chunk 4096 -> 1024 (cap 1024, align 256, last DP sync tokens [8, 7, 7, 7, 7, 8, 6, 7] extend [False, False, False, False, False, False, False, False])",
+  "[2026-09-28 09:05:49 DP0 TP0 EP0] numinous_dp_extend_cap active: chunk 4096 -> 1024 (cap 1024, align 256, last DP sync tokens [7, 7, 7, 7, 7, 8, 6, 7] extend [False, False, False, False, False, False, False, False])",
+  "[2026-09-28 09:05:53 DP5 TP5 EP5] numinous_dp_extend_cap active: chunk 4096 -> 1024 (cap 1024, align 256, last DP sync tokens [7, 6, 8, 3, 6, 7, 7, 8] extend [False, False, False, False, False, False, False, False])"
+ ],
+ "spec_acceptance": {
+  "samples": 370,
+  "accept_len_mean": 4.288,
+  "accept_len_p10": 3.77,
+  "accept_len_p50": 4.29,
+  "accept_len_p90": 4.84,
+  "accept_rate_mean": 0.658
+ },
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ }
+}

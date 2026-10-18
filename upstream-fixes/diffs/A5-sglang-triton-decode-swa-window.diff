@@ -1,0 +1,25 @@
+--- a/python/sglang/srt/layers/attention/triton_backend.py	2026-09-29 06:30:57.700541783 +0000
++++ b/python/sglang/srt/layers/attention/triton_backend.py	2026-09-29 06:31:48.734309341 +0000
+@@ -1151,7 +1151,7 @@
+         if self.sliding_window_size is not None and self.sliding_window_size > 0:
+             if kv_indices_buf is None:
+                 self.cuda_graph_window_kv_indices = torch.zeros(
+-                    (max_num_tokens * self.sliding_window_size),
++                    (max_num_tokens * (self.sliding_window_size + 1)),
+                     dtype=torch.int64,
+                     device=self.device,
+                 )
+@@ -2574,9 +2574,12 @@
+     captured. Static SWA pools gather full-token ids from req_to_token and keep
+     the legacy full->swa translate below.
+     """
++    # sliding_window_size follows the window_left convention (HF window - 1):
++    # attend to the current token plus window_left previous ones, as the Triton
++    # extend kernel and FlashInfer do.
+     window_kv_lens = torch.minimum(
+         seq_lens,
+-        torch.tensor(sliding_window_size),
++        torch.tensor(sliding_window_size + 1),
+     )
+     window_kv_indptr[1 : bs + 1] = torch.cumsum(window_kv_lens, dim=0)
+     window_kv_indptr = window_kv_indptr[: bs + 1]

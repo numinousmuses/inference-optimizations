@@ -1,0 +1,39 @@
+{
+ "model": "moonshotai/Kimi-K3 (MXFP4 native)",
+ "silicon": "8x B300",
+ "status": "KEPT 2026-09-21 (warm OR-shape cells added)",
+ "lanes": {
+  "std": {
+   "flags_delta": "dspark(RadixArk draft, block 7, replayssm) + --mamba-full-memory-ratio 0.95 + mem 0.90 + mrr 96",
+   "cell": "8k/b48 4,195@87.4 (2.86x all-time ceiling)"
+  },
+  "capability": {
+   "flags_delta": "+ --disable-radix-cache",
+   "cell": "8k/b64 4,681@73.1 (radix state-retention was the b64 blocker; production keeps radix)"
+  },
+  "midctx": {
+   "flags_delta": "dspark lane, ratio 0.93",
+   "cells": "16k/b40 3,161@79 (x1.20), 65k/b13 988@76 (x2.24)"
+  },
+  "long": {
+   "flags_delta": "bal, ratio 0.90, mem 0.90",
+   "cells": "131k/b12 757@63 (x2.17), 262k/b6 437@73 (x2.83), 524k/b3 254@85 (x4.59)"
+  },
+  "std_or_shape": {
+   "flags_delta": "production recipe; admission at 32",
+   "cell": "128k c=32: 830@34.3 +26%; c=48 thrashes (36 running, state usage 0.80)",
+   "evidence": "pool_program/k3_deep_*.json, k3_ctrl_*.json"
+  }
+ },
+ "rules": [
+  "KDA state = 96h x 128^2 bf16 = 289MB/slot x 69 layers-worth; DSPARK replay needs ~3x slots/concurrent",
+  "ratio-sizing beats explicit slots (radix retains KDA states for cached prefixes)",
+  "ratio/mem is a JOINT shape: 0.95 starves KV pool (648k) - 0.93-0.95 x mem 0.90 is the balance",
+  "nvidia/Kimi-K3-NVFP4 unusable on this tree: auto=init-crash, trtllm=trickle-decode, cutlass=crash (3 receipts) - MXFP4 stays",
+  "1M rung is pool physics (1.04M x b>1 > 1.75M pool): dcp/hicache only levers",
+  "Seat count 33-37 at 60-128k is the GDN state cache (3 slots/request under DSpark replay), not KV: token usage 0.1-0.2 with DCP8 (pool ~5.3M node-wide).",
+  "fp4 KV: CuteDSL MLA backend refuses (fp8/bf16 only). int8 mamba checkpoint at fraction 0.90 OOMs under load; retest at 0.85.",
+  "State the standard floor as ~35 tok/s median; p99 at c=32 is ~20."
+ ],
+ "evidence": "numinous-inference/research/gpu-evidence/k3_opt{,3,4,5}.json"
+}

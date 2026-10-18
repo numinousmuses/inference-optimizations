@@ -1,0 +1,37 @@
+From 71d605039a304f86602d625f6640563df45553ea Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Mon, 21 Sep 2026 22:55:12 +0000
+Subject: [PATCH] decode burst: TP only. Under DP attention the prefill
+ delayer's per-pass gloo collective lives in get_new_batch_prefill; skipping
+ it on a rank aborts the group.
+
+---
+ python/sglang/srt/managers/scheduler.py | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index 68483dcde..a9029ee80 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -3109,13 +3109,14 @@ class Scheduler(
+ 
+         if self.dllm_config is not None:
+             new_batch = self.get_new_batch_dllm(running_batch)
+-        elif hold_prefill(
++        elif not self.require_mlp_sync and hold_prefill(
++            # TP only: under DP attention get_new_batch_prefill runs the prefill delayer's gloo collective every
++            # pass, and a rank that skips it desynchronises the group (measured: gloo size mismatch, abort).
+             self.decode_burst,
+             self.decode_streak,
+             (last_batch.forward_mode.is_extend() if last_batch is not None else None),
+-            # under DP attention the decision must match on every rank: use the synced view only
+-            True if self.require_mlp_sync else not running_batch.is_empty(),
+-            False if self.require_mlp_sync else bool(running_batch.is_prefill_only),
++            not running_batch.is_empty(),
++            bool(running_batch.is_prefill_only),
+             chunked_prefill_pending=self.chunked_req is not None,
+         ):
+             # Numinous: hold prefill for this pass; decode keeps the step.
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1,0 +1,101 @@
+{
+ "acc_dir": "/cache/accuracy/diffusiongemma-26b-a4b_standard_20260928-082358",
+ "control": "dg_stock",
+ "control_found": true,
+ "arms": {
+  "dg_standard": {
+   "control": "dg_stock",
+   "arm": "dg_standard",
+   "metrics": {
+    "tf": {
+     "prompts": 0,
+     "positions": 0,
+     "mismatched_prompts": [],
+     "kl_mean": NaN,
+     "kl_p99": NaN,
+     "kl_max": NaN,
+     "top1_agree": NaN,
+     "dlp_mean": NaN,
+     "dlp_p99": NaN,
+     "dlp_max": NaN
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.955,
+     "acc_arm": 0.96,
+     "drop_pts": -0.5000000000000004,
+     "control_only_correct": 0,
+     "arm_only_correct": 1,
+     "answer_changed": 4,
+     "mcnemar_p_arm_worse": 1.0
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.01,
+     "kl_p99_max": 0.25,
+     "top1_agree_min": 0.97,
+     "dlp_p99_max": 0.5,
+     "em_drop_max_pts": 2.0,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": null,
+    "noise_given": false,
+    "tf_skipped": true,
+    "note": "teacher-forced logprobs are undefined for a diffusion model; EM task check only"
+   }
+  },
+  "dg_standard_adaptive": {
+   "control": "dg_stock",
+   "arm": "dg_standard_adaptive",
+   "metrics": {
+    "tf": {
+     "prompts": 0,
+     "positions": 0,
+     "mismatched_prompts": [],
+     "kl_mean": NaN,
+     "kl_p99": NaN,
+     "kl_max": NaN,
+     "top1_agree": NaN,
+     "dlp_mean": NaN,
+     "dlp_p99": NaN,
+     "dlp_max": NaN
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.955,
+     "acc_arm": 0.965,
+     "drop_pts": -1.0000000000000009,
+     "control_only_correct": 0,
+     "arm_only_correct": 2,
+     "answer_changed": 5,
+     "mcnemar_p_arm_worse": 1.0
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.01,
+     "kl_p99_max": 0.25,
+     "top1_agree_min": 0.97,
+     "dlp_p99_max": 0.5,
+     "em_drop_max_pts": 2.0,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": null,
+    "noise_given": false,
+    "tf_skipped": true,
+    "note": "teacher-forced logprobs are undefined for a diffusion model; EM task check only"
+   }
+  }
+ }
+}

@@ -1,0 +1,95 @@
+From 3b638ae3217c5c8d93e911bc73cbb0d29cd8f320 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 03:43:34 +0000
+Subject: [PATCH] dcp on dsa: extend maps fused top-k slots into the local
+ shard copy through an inverse slot table; positions path kept for the unfused
+ transform
+
+---
+ .../srt/layers/attention/dsa_backend.py       | 49 ++++++++++++-------
+ 1 file changed, 31 insertions(+), 18 deletions(-)
+
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index ee4061409..5dbd44622 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -1974,15 +1974,6 @@ class DeepseekSparseAttnBackend(
+ 
+             page_table_1 = self._get_fused_topk_page_table(topk_indices)
+         else:
+-            if (
+-                topk_transform_method == TopkTransformMethod.RAGGED
+-                and get_parallel().dcp_enabled
+-                and forward_batch.forward_mode.is_extend_without_speculative()
+-            ):
+-                # Numinous DCP extend: gathered query heads, local KV shard, (o, lse) for the cross-rank merge
+-                if topk_indices is not None:
+-                    topk_indices = self._pad_topk_indices(topk_indices, q_nope.shape[0])
+-                return self._forward_dcp_extend_local(q_nope, q_rope, layer, forward_batch, metadata, topk_indices)
+             if topk_transform_method == TopkTransformMethod.RAGGED:
+                 if topk_indices is not None:
+                     topk_indices = self._pad_topk_indices(topk_indices, q_nope.shape[0])
+@@ -2056,6 +2047,11 @@ class DeepseekSparseAttnBackend(
+                 v_head_dim=layer.v_head_dim,
+             )
+         elif dsa_impl in ("flashmla_sparse", "flashmla_sparse_q8"):
++            if get_parallel().dcp_enabled and forward_batch.forward_mode.is_extend_without_speculative():
++                # Numinous DCP extend: gathered query heads, local KV shard, (o, lse) for the cross-rank merge.
++                # Uses the indexer's positions directly, whichever top-k transform produced page_table_1.
++                positions = self._pad_topk_indices(topk_indices, q_nope.shape[0]) if topk_indices is not None else None
++                return self._forward_dcp_extend_local(q_nope, q_rope, layer, forward_batch, metadata, positions)
+             if topk_transform_method == TopkTransformMethod.RAGGED:
+                 _has_prefix = any(forward_batch.extend_prefix_lens_cpu)
+                 page_table_1 = topk_indices
+@@ -2966,6 +2962,13 @@ class DeepseekSparseAttnBackend(
+             e0 += el
+         return torch.cat(parts, dim=0).unsqueeze(1)
+ 
++    def _dcp_inverse_slot_table(self, size: int, device) -> torch.Tensor:
++        buf = getattr(self, "_dcp_inv_buf", None)
++        if buf is None or buf.numel() < size:
++            buf = torch.empty(size, dtype=torch.int32, device=device)
++            self._dcp_inv_buf = buf
++        return buf[:size]
++
+     def _forward_dcp_extend_local(self, q_nope, q_rope, layer, forward_batch: ForwardBatch, metadata, topk_indices):
+         """Numinous DCP extend over this rank's KV shard. Positions p with p % dcp == rank live at local slot p // dcp.
+         The indexer selected global positions; keep the owned ones, address them in a per-rank dequantised
+@@ -2992,15 +2995,25 @@ class DeepseekSparseAttnBackend(
+         else:
+             kv_local = kv_layer[flat_local].to(q_nope.dtype)
+         kv_local = kv_local.view(kv_local.shape[0], 1, -1)
+-        cu_local = torch.cumsum(local_lens, dim=0) - local_lens                            # exclusive
+-        per_token_offset = torch.repeat_interleave(cu_local, forward_batch.extend_seq_lens[:bs])
+-        if per_token_offset.shape[0] != topk_indices.shape[0]:                             # padded rows
+-            pad = topk_indices.shape[0] - per_token_offset.shape[0]
+-            per_token_offset = torch.cat([per_token_offset, per_token_offset.new_zeros(max(pad, 0))])[: topk_indices.shape[0]]
+-        pos = topk_indices.to(torch.int64)
+-        owned = (pos >= 0) & (pos % dcp == rank)
+-        local_pos = torch.where(owned, pos // dcp + per_token_offset.unsqueeze(1), torch.full_like(pos, -1))
+-        indices = local_pos.to(torch.int32)
++        # The indexer's selection arrives as virtual KV slots (fused top-k), or as positions when the transform is
++        # not fused. Either way map into the row order of kv_local: slots through an inverse table over the virtual
++        # slot space (owned slots only; everything else stays -1), positions through the owner rule and offsets.
++        sel = topk_indices.to(torch.int64)
++        if self.use_fused_topk:
++            vsize = (self.token_to_kv_pool.size + self.token_to_kv_pool.page_size) * dcp + 1
++            inv = self._dcp_inverse_slot_table(vsize, pt.device)
++            inv.fill_(-1)
++            inv[flat_virtual.to(torch.int64)] = torch.arange(flat_virtual.shape[0], device=pt.device, dtype=torch.int32)
++            indices = inv[torch.clamp(sel, min=0, max=vsize - 1)]
++            indices = torch.where(sel >= 0, indices, torch.full_like(indices, -1))
++        else:
++            cu_local = torch.cumsum(local_lens, dim=0) - local_lens                        # exclusive
++            per_token_offset = torch.repeat_interleave(cu_local, forward_batch.extend_seq_lens[:bs])
++            if per_token_offset.shape[0] != sel.shape[0]:                                  # padded rows
++                pad = sel.shape[0] - per_token_offset.shape[0]
++                per_token_offset = torch.cat([per_token_offset, per_token_offset.new_zeros(max(pad, 0))])[: sel.shape[0]]
++            owned = (sel >= 0) & (sel % dcp == rank)
++            indices = torch.where(owned, sel // dcp + per_token_offset.unsqueeze(1), torch.full_like(sel, -1)).to(torch.int32)
+         counts = (indices >= 0).sum(dim=-1)
+         q_all = concat_mla_absorb_q_general(q_nope, q_rope)
+         num_tokens, num_heads, head_dim = q_all.shape
+-- 
+2.50.1 (Apple Git-155)
+

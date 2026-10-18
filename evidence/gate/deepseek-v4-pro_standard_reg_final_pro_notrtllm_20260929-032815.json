@@ -1,0 +1,197 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "final_pro_notrtllm",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "flags_remove": [
+   "--moe-runner-backend",
+   "--chunked-prefill-size"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion",
+   "--chunked-prefill-size",
+   "65536",
+   "--num-continuous-decode-steps",
+   "8"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/dp_extend_cap_hooks.py": "!run",
+   "operations/patches/pro_small_kernel_hooks.py": "!run",
+   "operations/patches/spec_hooks.py": "!run pro_attn",
+   "operations/patches/trtllm_attn_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_DP_EXTEND_CAP": "0",
+   "NUMINOUS_NORM_QUANT": "1",
+   "NUMINOUS_FP8_LM_HEAD": "1",
+   "NUMINOUS_DSV4_UNIFORM_POOL_BYTES": "1",
+   "SGLANG_DECODE_BURST_QUEUE_CAP": "2"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--chunked-prefill-size",
+  "65536",
+  "--num-continuous-decode-steps",
+  "8"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-29T02:49:06Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 42.14,
+   "warm_agg_out_tok_s": 1306.2,
+   "steady_agg_out_tok_s": 1742.5,
+   "ttft_p90_s": 3.42,
+   "ttft_p99_s": 6.25,
+   "ttft_max_s": 8.03,
+   "turn_wall_p50_s": 6.53,
+   "turn_wall_p90_s": 12.65,
+   "turn_wall_p99_s": 15.82,
+   "tail_last10pct_s": 14.3,
+   "warm_session_rate_sum": 1983.9,
+   "warm_ttft_p50_s": 1.44,
+   "hit_rate": 0.9369,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 232.0,
+   "accept_len": 4.26
+  },
+  {
+   "repeat": 0,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 28.54,
+   "warm_agg_out_tok_s": 1942.5,
+   "steady_agg_out_tok_s": 2672.2,
+   "ttft_p90_s": 4.39,
+   "ttft_p99_s": 7.56,
+   "ttft_max_s": 9.72,
+   "turn_wall_p50_s": 10.12,
+   "turn_wall_p90_s": 18.04,
+   "turn_wall_p99_s": 23.98,
+   "tail_last10pct_s": 20.9,
+   "warm_session_rate_sum": 2921.1,
+   "warm_ttft_p50_s": 2.05,
+   "hit_rate": 0.9383,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 252.1,
+   "accept_len": 4.3
+  }
+ ],
+ "booted": true,
+ "boot_min": 27.1,
+ "kv_pool_tokens": [
+  1404160
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-e22dec8f-f53f-8230-bb5f-2cd7f49a0d04",
+   "GPU-22137233-d656-8e52-2665-8cb04c38a431",
+   "GPU-42a16389-1b53-1ede-4d76-2cdfb224692c",
+   "GPU-6df3abd7-3f6e-f43a-4b85-ce5c81dcc53c",
+   "GPU-86efdb71-5050-4b1a-46db-d159c27dbcc0",
+   "GPU-95acdca2-cad0-c2b3-edae-08580d30ba61",
+   "GPU-e6a5278f-657a-dd30-f062-3df6f3022c1f",
+   "GPU-b80f55cd-84fb-bd87-0651-0eb65f8876aa"
+  ]
+ },
+ "sessions_dropped_oversize": 14,
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ },
+ "dp_peak_running": {
+  "0": 16,
+  "1": 16,
+  "2": 15,
+  "3": 15,
+  "4": 16,
+  "5": 16,
+  "6": 15,
+  "7": 16
+ },
+ "numinous_log": [
+  "[2026-09-29 02:59:30 DP4 TP4 EP4] numinous fp8_lm_head active (head (129280, 7168) quantized to FP8 128x128 UE8M0, DeepGEMM logits)",
+  "Capturing batches (bs=20 avail_mem=10.40 GB):  48%|\u2588\u2588\u2588\u2588\u258a     | 13/27 [05:05<00:31,  2.22s/it][2026-09-29 03:13:46 DP5 TP5 EP5] numinous norm_quant active (q_norm + FP8 UE8M0 quant in one kernel, shared by wq_b and indexer wq_b)",
+  "[2026-09-29 03:16:12 DP4 TP4 EP4] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-29 03:17:54 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [8038, 8190, 8192, 8192, 8192, 8192, 8172, 8192], rank rows 8038 -> 8170"
+ ],
+ "spec_acceptance": {
+  "samples": 362,
+  "accept_len_mean": 4.267,
+  "accept_len_p10": 3.72,
+  "accept_len_p50": 4.26,
+  "accept_len_p90": 4.77,
+  "accept_rate_mean": 0.653
+ }
+}

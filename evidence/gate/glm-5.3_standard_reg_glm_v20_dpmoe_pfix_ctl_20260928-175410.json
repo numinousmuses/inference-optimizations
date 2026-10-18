@@ -1,0 +1,210 @@
+{
+ "cell": "glm-5.3/standard",
+ "arm": "glm_v20_dpmoe_pfix_ctl",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "overlay": {
+   "operations/kernels/numinous_moe_tactics.py": "srt/layers/moe/numinous_moe_tactics.py",
+   "operations/kernels/moe_tactics/pro_mxfp4_b200.json": "srt/layers/moe/moe_tactics/pro_mxfp4_b200.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_b300.json": "srt/layers/moe/moe_tactics/pro_mxfp4_b300.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_ep8_b200.json": "srt/layers/moe/moe_tactics/pro_mxfp4_ep8_b200.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_ep8_b300.json": "srt/layers/moe/moe_tactics/pro_mxfp4_ep8_b300.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_fs_b200.json": "srt/layers/moe/moe_tactics/pro_mxfp4_fs_b200.json",
+   "operations/kernels/moe_tactics/pro_mxfp4_fs_b300.json": "srt/layers/moe/moe_tactics/pro_mxfp4_fs_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep8_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep8_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep8_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep8_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_tp4_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_tp4_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_tp4_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_tp4_b300.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep4_b200.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep4_b200.json",
+   "operations/kernels/moe_tactics/glm_nvfp4_ep4_b300.json": "srt/layers/moe/moe_tactics/glm_nvfp4_ep4_b300.json",
+   "operations/patches/sglang_numinous_hooks.py": "!run tactics",
+   "operations/kernels/numinous_dp_moe_nvfp4.py": "srt/layers/moe/numinous_dp_moe_nvfp4.py",
+   "operations/kernels/numinous_dp_moe.py": "srt/layers/moe/numinous_dp_moe.py",
+   "operations/kernels/symm_collectives.py": "srt/layers/moe/symm_collectives.py",
+   "operations/patches/glm_dpmoe_hooks.py": "!run",
+   "operations/patches/glm_tp1_shared_hooks.py": "!run",
+   "operations/patches/glm_dsa_hooks.py": "!run"
+  },
+  "env": {
+   "NUMINOUS_DP_MOE": "1",
+   "SGLANG_SHARED_EXPERT_TP1": "1",
+   "NUMINOUS_GLM_FLASHMLA_PREFILL": "0"
+  },
+  "flags_add": [
+   "--moe-runner-backend",
+   "flashinfer_trtllm",
+   "--speculative-moe-runner-backend",
+   "auto"
+  ],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/glm-5.3_standard_20260928-163332",
+  "_acc_control": "glm_v20_dpmoe_pfix_ctl"
+ },
+ "config_digest": "bb63bb89e3874dd5",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-attention-local-control-broadcast",
+  "--enable-dp-lm-head",
+  "--quantization",
+  "modelopt_fp4",
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--chunked-prefill-size",
+  "16384",
+  "--enable-prefill-delayer",
+  "--mem-fraction-static",
+  "0.90",
+  "--cuda-graph-max-bs-decode",
+  "48",
+  "--max-running-requests",
+  "512",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--reasoning-parser",
+  "glm45",
+  "--tool-call-parser",
+  "glm47",
+  "--num-continuous-decode-steps",
+  "8",
+  "--moe-runner-backend",
+  "flashinfer_trtllm",
+  "--speculative-moe-runner-backend",
+  "auto"
+ ],
+ "ladder": [
+  64,
+  96
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_t8_300.json",
+ "started": "2026-09-28T16:44:14Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 36.16,
+   "warm_agg_out_tok_s": 1076.7,
+   "steady_agg_out_tok_s": 1377.9,
+   "ttft_p90_s": 5.67,
+   "ttft_p99_s": 7.65,
+   "ttft_max_s": 8.78,
+   "turn_wall_p50_s": 8.88,
+   "turn_wall_p90_s": 18.35,
+   "turn_wall_p99_s": 23.64,
+   "tail_last10pct_s": 20.0,
+   "warm_session_rate_sum": 1547.2,
+   "warm_ttft_p50_s": 2.55,
+   "hit_rate": 0.9627,
+   "mean_prompt_tokens": 92950,
+   "mean_out_tokens": 246.7,
+   "accept_len": 3.11
+  },
+  {
+   "repeat": 0,
+   "sessions": 96,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 23.58,
+   "warm_agg_out_tok_s": 1137.8,
+   "steady_agg_out_tok_s": 1545.1,
+   "ttft_p90_s": 8.03,
+   "ttft_p99_s": 13.47,
+   "ttft_max_s": 17.27,
+   "turn_wall_p50_s": 14.04,
+   "turn_wall_p90_s": 26.7,
+   "turn_wall_p99_s": 35.1,
+   "tail_last10pct_s": 35.1,
+   "warm_session_rate_sum": 1618.5,
+   "warm_ttft_p50_s": 3.09,
+   "hit_rate": 0.9598,
+   "mean_prompt_tokens": 96201,
+   "mean_out_tokens": 261.7,
+   "accept_len": 3.18
+  }
+ ],
+ "booted": true,
+ "boot_min": 14.6,
+ "kv_pool_tokens": [
+  1552832
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-e14cf098-206e-0e73-98fe-40ed6bffdbf5",
+   "GPU-fbafed90-f765-c512-0808-013ec53f3be3",
+   "GPU-9dd3760a-3d41-18b0-e7ee-b1d287f5cf4e",
+   "GPU-36a489bd-bf6a-684c-9384-fddcab1e2bee",
+   "GPU-ceba7642-aa13-a64e-62d7-5af1de9b1d52",
+   "GPU-d9f7a2cd-bbbd-f92b-7e89-b89371b747fb",
+   "GPU-251a47af-4ad9-9db7-220e-fb1d5ec375c5",
+   "GPU-2160fa1c-93b2-0c2b-4225-ce772f22bbf1"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/glm-5.3_standard_20260928-163332/accuracy_glm_v20_dpmoe_pfix_ctl.json",
+  "seconds": 99.6,
+  "prompts_source": "sessions:real_sessions_t8_300.json",
+  "gsm8k_acc": 0.965
+ },
+ "sessions_dropped_oversize": 9,
+ "dp_peak_running": {
+  "0": 12,
+  "1": 11,
+  "2": 12,
+  "3": 12,
+  "4": 12,
+  "5": 12,
+  "6": 12,
+  "7": 12
+ },
+ "numinous_log": [
+  "[2026-09-28 16:52:57 DP1 TP1] numinous_dp_moe_nvfp4: no MoE layer of GlmMoeDsaForCausalLM is covered (the NVFP4 method is not on its TRT-LLM FP4 path (no g1_scale_c))",
+  "Multi-thread loading shards:  79% Completed | 37/47 [01:59<00:20,  2.10s/it][2026-09-28 16:55:03 DP4 TP4] numinous_dp_moe_nvfp4: no MoE layer of GlmMoeDsaForCausalLMNextN is covered (experts use UnquantizedFusedMoEMethod, not ModelOptNvFp4FusedMoEMethod)",
+  "[2026-09-28 16:55:39 DP5 TP5] numinous_dp_moe_nvfp4 declined: mlp is DeepseekV2MLP, not DeepseekV2MoE",
+  "[2026-09-28 16:55:46 DP5 TP5] numinous_dp_moe_nvfp4 active: fused DP-MoE (NVFP4 payload) serves the MoE layers",
+  "/sgl-workspace/sglang/python/sglang/srt/layers/moe/numinous_dp_moe_nvfp4.py:173: FutureWarning: `enable_symm_mem_for_group` is deprecated. There is no need to call this function anymore.",
+  "Capturing num tokens (num_tokens=2048 avail_mem=17.36 GB):   0%|          | 0/42 [00:00<?, ?it/s][2026-09-28 16:57:05 DP0 TP0] numinous_moe_tactics: 7 tables for b200: [('glm', 'tp8', 41), ('glm', 'ep4', 41), ('glm', 'ep8', 41), ('glm', 'tp4', 41), ('pro', 'tp8', 41), ('pro', 'ep8', 41), ('pro', 'fs', 41)]",
+  "[2026-09-28 16:57:05 DP6 TP6] numinous_moe_tactics active: glm/tp8 tactic [256, 4] for 16384 tokens (sm100)",
+  "[2026-09-28 16:57:57 DP0 TP0] numinous_dp_moe_nvfp4 declined: experts use UnquantizedFusedMoEMethod, not ModelOptNvFp4FusedMoEMethod"
+ ],
+ "spec_acceptance": {
+  "samples": 651,
+  "accept_len_mean": 3.197,
+  "accept_len_p10": 2.81,
+  "accept_len_p50": 3.25,
+  "accept_len_p90": 3.54,
+  "accept_rate_mean": 0.733
+ }
+}

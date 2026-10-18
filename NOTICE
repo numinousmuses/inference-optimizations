@@ -1,0 +1,58 @@
+inference-optimizations
+Copyright 2026 Joshua Okolo and Numinous Technology
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository contains files derived from or modifying third-party code.
+Their original licenses apply to those portions; full texts are in LICENSES/.
+
+kv-cache-4bit/kv4mla/csrc/flashmla/ and csrc/glm_fp4_decode*.cu(h)
+  Derived from deepseek-ai/FlashMLA (commit ba89a34). MIT License.
+  LICENSES/FlashMLA.txt
+
+attention/sparse-prefill-compact-fp8/, attention/dsa-splitk-decode/,
+parallelism/dsa-decode-context-parallel/sparse_prefill_fp8.py
+  Call or implement the FlashMLA FP8 KV layout. MIT License.
+  LICENSES/FlashMLA.txt
+
+moe-gemm/w4a8-sm90-grouped-gemm/w4a8dg/w4a8dg_kernel.cuh
+  Design adapted from deepseek-ai/DeepGEMM sm90_fp8_gemm_1d2d.cuh. MIT License.
+  LICENSES/DeepGEMM.txt
+
+negative-results/code/idx_epilogue/
+  Patches source text of deepseek-ai/DeepGEMM 0.2.0. MIT License.
+  LICENSES/DeepGEMM.txt
+
+negative-results/code/moe_decode_w4/ (marlin_template.h, kernel.h, moe_w4.cuh,
+rtx_w4_decode_kernels.cuh)
+  Derived from IST-DASLab/marlin via the SGLang JIT Marlin MoE kernel. Apache-2.0.
+  LICENSES/Marlin.txt
+
+moe-gemm/w4a8-sm90-grouped-gemm/w4a8_tiles/, attention/gemma-fused-glue/*.cuh
+  Wrap or mirror sgl-project/sglang sgl-kernel sources. Apache-2.0.
+
+moe-gemm/cutedsl-grouped-nvfp4/
+  Drives the NVIDIA CUTLASS CuTe DSL blockscaled grouped GEMM example at runtime
+  (no CUTLASS source copied). BSD-3-Clause.
+  LICENSES/CUTLASS.txt
+
+attention/fa4-hd512-hopper/
+  Overrides internals of Dao-AILab/flash-attention (FlashAttention 4, cute
+  interface). BSD-3-Clause.
+  LICENSES/flash-attention.txt
+
+attention/glmflash-sm120/, kv-cache-4bit/kv4fi-flashinfer-backend/,
+kv-cache-4bit/kv4trt-xqa/
+  Build or call flashinfer-ai/flashinfer kernels. Apache-2.0.
+  LICENSES/FlashInfer.txt
+
+linear-attention-kda/flashkda-split/
+  Calls MoonshotAI/FlashKDA. MIT License.
+  LICENSES/FlashKDA.txt
+
+linear-attention-kda/kda-fused-decode/kda.py
+  Checked against the flash-linear-attention fused_recurrent_kda reference.
+
+scheduler/decode-burst/*.patch, parallelism/dsa-decode-context-parallel/*.patch,
+upstream-fixes/diffs/, and every *_hooks.py
+  Modify sgl-project/sglang (Apache-2.0); A10 modifies flashinfer (Apache-2.0).

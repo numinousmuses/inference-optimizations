@@ -1,0 +1,15 @@
+[
+ {
+  "ctx": 524288,
+  "rows": 2048,
+  "stock_logits_topk_us": 5845.0,
+  "stock_logits_only_us": 4768.1,
+  "fused_us": 10532.3,
+  "set_overlap_min": 1.0,
+  "cnt_mean": 6156.45751953125,
+  "cnt_max": 8327,
+  "cnt_min": 4352,
+  "fail_rows": 0,
+  "ok_rows": 2048
+ }
+]

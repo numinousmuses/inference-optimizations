@@ -1,0 +1,64 @@
+{
+ "acc_dir": "/cache/accuracy/gemma-4-26b-a4b_standard_20260929-004052",
+ "control": "gemma_standard_v20",
+ "control_found": true,
+ "arms": {
+  "kv4tri_gemma_fp8": {
+   "control": "gemma_standard_v20",
+   "arm": "kv4tri_gemma_fp8",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51200,
+     "mismatched_prompts": [],
+     "kl_mean": 0.211936905329958,
+     "kl_p99": 4.858343534709311,
+     "kl_max": 30.9237690994424,
+     "top1_agree": 0.92380859375,
+     "dlp_mean": 0.40780633078125,
+     "dlp_p99": 6.181865370000005,
+     "dlp_max": 39.759054
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.935,
+     "acc_arm": 0.955,
+     "drop_pts": -1.9999999999999907,
+     "control_only_correct": 1,
+     "arm_only_correct": 5,
+     "answer_changed": 12,
+     "mcnemar_p_arm_worse": 0.984375
+    }
+   },
+   "verdict": {
+    "pass": false,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": false,
+     "kl_p99": false,
+     "top1_agree": false,
+     "dlp_p99": false,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.01,
+     "kl_p99_max": 0.25,
+     "top1_agree_min": 0.97,
+     "dlp_p99_max": 0.5,
+     "em_drop_max_pts": 2.0,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": null,
+    "noise_given": false,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "kv4tri_gemma_nvfp4": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}

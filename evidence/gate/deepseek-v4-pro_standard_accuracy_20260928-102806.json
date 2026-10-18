@@ -1,0 +1,12 @@
+{
+ "acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20260928-091537",
+ "control": "v20_w4a4_hooks_on",
+ "control_found": true,
+ "arms": {
+  "v20_w4a4_hooks_on_trtllm_attn": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}

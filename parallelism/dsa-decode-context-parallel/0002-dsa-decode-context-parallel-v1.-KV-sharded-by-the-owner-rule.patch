@@ -1,0 +1,312 @@
+From 9d22825cca62bae2ca6c79372a9c4c2ec48e8c38 Mon Sep 17 00:00:00 2001
+From: numinousmuses <103385201+numinousmuses@users.noreply.github.com>
+Date: Mon, 21 Sep 2026 23:20:38 +0000
+Subject: [PATCH] dsa: decode context parallel v1. KV sharded by the owner rule
+ (existing write kernels), indexer key cache replicated over the virtual slot
+ span, decode through FlashMLA fp8 decode on this rank's owned selected slots
+ returning (o, lse) for the existing cross-rank merge, extend over the
+ group-gathered request-contiguous prefix, draft DSA pool keeps 64-token index
+ pages over its virtual span. Forces flashmla_sparse/flashmla_kv under
+ --dcp-size > 1.
+
+---
+ python/sglang/srt/arg_groups/overrides.py     |   8 ++
+ .../srt/layers/attention/dsa/dcp_topk.py      |   9 ++
+ .../srt/layers/attention/dsa_backend.py       | 109 +++++++++++++++++-
+ .../srt/mem_cache/kv_cache_configurator.py    |  54 ++++++++-
+ .../attention_forward_methods/forward_mla.py  |   3 +-
+ test/numinous/test_dcp_topk.py                |   8 ++
+ 6 files changed, 182 insertions(+), 9 deletions(-)
+
+diff --git a/python/sglang/srt/arg_groups/overrides.py b/python/sglang/srt/arg_groups/overrides.py
+index 53898da0c..da24c395e 100644
+--- a/python/sglang/srt/arg_groups/overrides.py
++++ b/python/sglang/srt/arg_groups/overrides.py
+@@ -1737,6 +1737,14 @@ def _dsa_split_backend_resolution(view: Any) -> dict:
+         if not user_set_decode:
+             declared["dsa_decode_backend"] = "trtllm" if major >= 10 else "fa3"
+ 
++    if getattr(view, "dcp_size", 1) and view.dcp_size > 1:
++        # Numinous DCP on the DSA backend: decode goes through FlashMLA's fp8 decode kernel (returns the LSE the
++        # cross-rank merge needs) and prefill through the bf16 sparse kernel over the group-gathered prefix.
++        if kv_cache_dtype != "fp8_e4m3":
++            raise ValueError("--dcp-size > 1 on the DSA backend requires --kv-cache-dtype fp8_e4m3")
++        declared["dsa_prefill_backend"] = "flashmla_sparse"
++        declared["dsa_decode_backend"] = "flashmla_kv"
++        logger.warning("DCP on DSA: forcing dsa_prefill_backend=flashmla_sparse, dsa_decode_backend=flashmla_kv")
+     prefill = declared.get("dsa_prefill_backend", view.dsa_prefill_backend)
+     decode = declared.get("dsa_decode_backend", view.dsa_decode_backend)
+     _check_tilelang_dsa_fp8_kv(kv_cache_dtype, prefill, decode, hip=is_hip())
+diff --git a/python/sglang/srt/layers/attention/dsa/dcp_topk.py b/python/sglang/srt/layers/attention/dsa/dcp_topk.py
+index 3561c3c82..aa42758de 100644
+--- a/python/sglang/srt/layers/attention/dsa/dcp_topk.py
++++ b/python/sglang/srt/layers/attention/dsa/dcp_topk.py
+@@ -78,3 +78,12 @@ def select_dcp(scores_full: torch.Tensor, k: int, dcp_size: int) -> list[torch.T
+     gathered_s, gathered_p = torch.cat(cands_s, dim=-1), torch.cat(cands_p, dim=-1)  # the all-gather
+     _, top_p = merge_topk(gathered_s, gathered_p, k)
+     return [compact_owned(global_to_local_owned(top_p, dcp_size, r)) for r in range(dcp_size)]
++
++
++def owned_local_slots(slots: torch.Tensor, dcp_size: int, dcp_rank: int) -> tuple[torch.Tensor, torch.Tensor]:
++    """Kernel-facing form of the owner rule on selected KV slots: [rows, k] virtual slots (with -1 padding) ->
++    ([rows, k] int32 local slots compacted to the front with -1 after, [rows] int32 valid counts)."""
++    local = global_to_local_owned(slots.to(torch.int64), dcp_size, dcp_rank)
++    local = compact_owned(local)
++    counts = (local >= 0).sum(dim=-1).to(torch.int32)
++    return local.to(torch.int32), counts
+diff --git a/python/sglang/srt/layers/attention/dsa_backend.py b/python/sglang/srt/layers/attention/dsa_backend.py
+index 9078dbac6..f172227cf 100644
+--- a/python/sglang/srt/layers/attention/dsa_backend.py
++++ b/python/sglang/srt/layers/attention/dsa_backend.py
+@@ -987,7 +987,7 @@ class DeepseekSparseAttnBackend(
+                 # This is likely to be triggered by PP with high kv reuse & parallelism
+                 kv_cache_capacity = (
+                     self.token_to_kv_pool.size + self.token_to_kv_pool.page_size
+-                )
++                ) * get_parallel().attn_dcp_size  # virtual slots under DCP
+                 if forward_batch.seq_lens_sum > kv_cache_capacity:
+                     max_idx = page_table_1_flattened.max().item()
+                     assert max_idx < kv_cache_capacity, (
+@@ -2104,7 +2104,11 @@ class DeepseekSparseAttnBackend(
+                     )
+ 
+                 # bf16 path (dsa_impl == "flashmla_sparse").
+-                if _has_prefix:
++                if _has_prefix and get_parallel().dcp_enabled:
++                    # Numinous DCP: this rank holds an eighth of each prefix; gather the prefixes from the group
++                    # into the request-contiguous [prefix | extend] layout the RAGGED offsets describe.
++                    kv_cache = self._gather_dcp_prefix_kv(forward_batch, layer, k, k_rope)
++                elif _has_prefix:
+                     page_table_1_flattened = (
+                         self.forward_metadata.page_table_1_flattened
+                     )
+@@ -2271,6 +2275,26 @@ class DeepseekSparseAttnBackend(
+                 page_size=1,
+             )
+ 
++        if get_parallel().dcp_enabled:
++            # Numinous DCP: the selected slots are virtual; keep the ones this rank owns as local rows, the rest
++            # become -1. FlashMLA's fp8 decode kernel masks -1, takes the per-row valid count as cache_seqlens and
++            # returns the rank-local (o, lse) the cross-rank merge consumes (base e).
++            from sglang.srt.layers.attention.dsa.dcp_topk import owned_local_slots
++            page_table_1, local_counts = owned_local_slots(
++                page_table_1, get_parallel().attn_dcp_size, get_parallel().attn_dcp_rank
++            )
++            if q_rope is not None:
++                q_all = concat_mla_absorb_q_general(q_nope, q_rope)
++            return self._forward_flashmla_kv_dcp(
++                q_all=q_all,
++                kv_cache=kv_cache,
++                v_head_dim=layer.v_head_dim,
++                sm_scale=layer.scaling,
++                layer=layer,
++                page_table_1=page_table_1,
++                cache_seqlens=local_counts,
++            )
++
+         if self.dsa_decode_impl == "flashmla_sparse":
+             if q_rope is not None:
+                 q_all = concat_mla_absorb_q_general(q_nope, q_rope)
+@@ -2852,6 +2876,87 @@ class DeepseekSparseAttnBackend(
+ 
+         return o
+ 
++    def _gather_dcp_prefix_kv(self, forward_batch: ForwardBatch, layer, k: torch.Tensor, k_rope: torch.Tensor) -> torch.Tensor:
++        """Numinous DCP extend: bf16 latent KV for the batch as [sum_r (prefix_r + extend_r), 1, dim], each request
++        contiguous with its prefix first, from the group-gathered prefixes and this pass's new tokens."""
++        from sglang.srt.layers.dcp.comm import all_gather_kv_cache_for_dcp
++
++        meta = forward_batch.attn_dcp_metadata
++        prefix_lens = list(forward_batch.extend_prefix_lens_cpu)
++        extend_lens = list(forward_batch.extend_seq_lens_cpu)
++        kv_layer = self.token_to_kv_pool.get_key_buffer(layer.layer_id)
++        local_idx = meta.dcp_local_prefix_kv_indices
++        if self.dsa_kv_cache_store_fp8:
++            rows = dequantize_k_cache_paged(kv_layer, local_idx)          # [n, 1, 576] bf16
++        else:
++            rows = kv_layer[local_idx].to(k.dtype)
++        rows = rows.view(rows.shape[0], 1, -1)
++        cache_k_nope, cache_k_rope = rows[..., : layer.v_head_dim], rows[..., layer.v_head_dim :]
++        gathered = all_gather_kv_cache_for_dcp(
++            cache_k_nope, cache_k_rope, torch.tensor(prefix_lens), prefix_starts_cpu=torch.zeros(len(prefix_lens), dtype=torch.int64)
++        )
++        gathered = gathered.view(-1, gathered.shape[-1])
++        new = torch.cat([k.view(k.shape[0], -1), k_rope.view(k_rope.shape[0], -1)], dim=-1).to(gathered.dtype)
++        parts, p0, e0 = [], 0, 0
++        for pl, el in zip(prefix_lens, extend_lens):
++            parts.append(gathered[p0 : p0 + pl])
++            parts.append(new[e0 : e0 + el])
++            p0 += pl
++            e0 += el
++        return torch.cat(parts, dim=0).unsqueeze(1)
++
++    def _forward_flashmla_kv_dcp(
++        self,
++        q_all: torch.Tensor,
++        kv_cache: torch.Tensor,
++        v_head_dim: int,
++        sm_scale: float,
++        layer,
++        page_table_1: torch.Tensor,
++        cache_seqlens: torch.Tensor,
++    ):
++        """Numinous DCP decode: FlashMLA fp8 decode over this rank's owned selected slots; returns (o, lse)."""
++        from sgl_kernel.flash_mla import flash_mla_with_kvcache
++
++        q_all = q_all.view(-1, 1, q_all.shape[-2], layer.head_dim)
++        num_q_heads = q_all.shape[2]
++        target_q_heads = self.flashmla_kv_num_q_heads
++        if target_q_heads != num_q_heads:
++            q_input = q_all.new_zeros(q_all.shape[0], q_all.shape[1], target_q_heads, q_all.shape[3])
++            q_input[:, :, :num_q_heads, :] = q_all
++        else:
++            q_input = q_all
++        kv_cache = kv_cache.view(-1, self.real_page_size, 1, self.kv_cache_dim)
++        assert self.real_page_size == 64, "only page size 64 is supported"
++        if not self.dsa_kv_cache_store_fp8:
++            kv_cache = quantize_k_cache(kv_cache)
++        indices = page_table_1.unsqueeze(1)
++        assert indices.shape[-1] == self.dsa_index_topk
++        # the tile scheduler must see this rank's valid counts, not the global topk-clipped lengths
++        flashmla_metadata = self._compute_flashmla_metadata(cache_seqlens, 1)
++        o, lse = flash_mla_with_kvcache(
++            q=q_input,
++            k_cache=kv_cache,
++            cache_seqlens=cache_seqlens,
++            head_dim_v=v_head_dim,
++            tile_scheduler_metadata=flashmla_metadata.flashmla_metadata,
++            num_splits=flashmla_metadata.num_splits,
++            softmax_scale=sm_scale,
++            indices=indices,
++            block_table=torch.empty((q_all.shape[0], 0), dtype=torch.int32, device=q_all.device),
++            is_fp8_kvcache=True,
++        )
++        if target_q_heads != num_q_heads:
++            o = o[:, :, :num_q_heads, :]
++            lse = lse[:, :num_q_heads]
++        o = o.view(-1, num_q_heads, v_head_dim)
++        lse = lse.reshape(-1, num_q_heads).float()
++        # rows this rank holds nothing for: neutral partials so the merge ignores them
++        empty = (cache_seqlens == 0).view(-1, 1)
++        o = torch.where(empty.unsqueeze(-1), torch.zeros_like(o), o)
++        lse = torch.where(empty, torch.full_like(lse, float("-inf")), lse)
++        return o, lse
++
+     def _forward_standard_mha(
+         self,
+         q: torch.Tensor,
+diff --git a/python/sglang/srt/mem_cache/kv_cache_configurator.py b/python/sglang/srt/mem_cache/kv_cache_configurator.py
+index e92d34d6d..360183c5e 100644
+--- a/python/sglang/srt/mem_cache/kv_cache_configurator.py
++++ b/python/sglang/srt/mem_cache/kv_cache_configurator.py
+@@ -1133,9 +1133,23 @@ class KVCacheConfigurator:
+ 
+     def _build_oot_dsa_kv_pool(self, *, max_total_num_tokens: int) -> KVCache:
+         PoolCls = current_platform.get_dsa_kv_pool_cls()
++        # Numinous DCP on the DSA pool. The latent KV is sharded by the owner rule (the MLA write kernels
++        # divide the allocator's virtual slot by the world size), so the pool keeps max_total rows per rank.
++        # The indexer key cache stays replicated and is addressed by the virtual slot directly, so it spans
++        # max_total x dcp rows. The replicated draft pool keeps 64-token index pages (the paged MQA kernels
++        # need them) over its virtual-slot span, which its 64 x dcp allocator paging is a multiple of.
++        dcp_size = get_parallel().attn_dcp_size
++        dsa_page_size = self.pool_page_size
++        dsa_size = max_total_num_tokens
++        if dcp_size > 1:
++            dsa_page_size = get_schedule().page_size
++            if self.is_draft_worker:
++                dsa_size = max_total_num_tokens + self.pool_page_size
++            else:
++                pool_kwargs["index_buf_size"] = max_total_num_tokens * dcp_size
+         token_to_kv_pool = PoolCls(
+-            max_total_num_tokens,
+-            page_size=self.pool_page_size,
++            dsa_size,
++            page_size=dsa_page_size,
+             dtype=self.kv_cache_dtype,
+             kv_lora_rank=self.model_config.kv_lora_rank,
+             qk_rope_head_dim=self.model_config.qk_rope_head_dim,
+@@ -1157,9 +1171,23 @@ class KVCacheConfigurator:
+         self, *, max_total_num_tokens: int, is_dsa_model: bool
+     ) -> KVCache:
+         PoolCls = current_platform.get_mla_kv_pool_cls()
++        # Numinous DCP on the DSA pool. The latent KV is sharded by the owner rule (the MLA write kernels
++        # divide the allocator's virtual slot by the world size), so the pool keeps max_total rows per rank.
++        # The indexer key cache stays replicated and is addressed by the virtual slot directly, so it spans
++        # max_total x dcp rows. The replicated draft pool keeps 64-token index pages (the paged MQA kernels
++        # need them) over its virtual-slot span, which its 64 x dcp allocator paging is a multiple of.
++        dcp_size = get_parallel().attn_dcp_size
++        dsa_page_size = self.pool_page_size
++        dsa_size = max_total_num_tokens
++        if dcp_size > 1:
++            dsa_page_size = get_schedule().page_size
++            if self.is_draft_worker:
++                dsa_size = max_total_num_tokens + self.pool_page_size
++            else:
++                pool_kwargs["index_buf_size"] = max_total_num_tokens * dcp_size
+         token_to_kv_pool = PoolCls(
+-            max_total_num_tokens,
+-            page_size=self.pool_page_size,
++            dsa_size,
++            page_size=dsa_page_size,
+             dtype=self.kv_cache_dtype,
+             kv_lora_rank=self.model_config.kv_lora_rank,
+             qk_rope_head_dim=self.model_config.qk_rope_head_dim,
+@@ -1337,9 +1365,23 @@ class KVCacheConfigurator:
+                     self.layer_info.start_layer, self.layer_info.end_layer
+                 )
+             ]
++        # Numinous DCP on the DSA pool. The latent KV is sharded by the owner rule (the MLA write kernels
++        # divide the allocator's virtual slot by the world size), so the pool keeps max_total rows per rank.
++        # The indexer key cache stays replicated and is addressed by the virtual slot directly, so it spans
++        # max_total x dcp rows. The replicated draft pool keeps 64-token index pages (the paged MQA kernels
++        # need them) over its virtual-slot span, which its 64 x dcp allocator paging is a multiple of.
++        dcp_size = get_parallel().attn_dcp_size
++        dsa_page_size = self.pool_page_size
++        dsa_size = max_total_num_tokens
++        if dcp_size > 1:
++            dsa_page_size = get_schedule().page_size
++            if self.is_draft_worker:
++                dsa_size = max_total_num_tokens + self.pool_page_size
++            else:
++                pool_kwargs["index_buf_size"] = max_total_num_tokens * dcp_size
+         token_to_kv_pool = PoolCls(
+-            max_total_num_tokens,
+-            page_size=self.pool_page_size,
++            dsa_size,
++            page_size=dsa_page_size,
+             dtype=self.kv_cache_dtype,
+             kv_lora_rank=self.model_config.kv_lora_rank,
+             qk_rope_head_dim=self.model_config.qk_rope_head_dim,
+diff --git a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+index e140a117d..bda9659a1 100644
+--- a/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
++++ b/python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py
+@@ -103,7 +103,8 @@ def is_dcp_mla_decode_phase(forward_batch: ForwardBatch) -> bool:
+ 
+ 
+ def is_mla_dcp_lse_base_on_e(attention_backend: Optional[str]) -> bool:
+-    return attention_backend in {"flashmla", "cutedsl_mla"}
++    # Numinous: the dsa backend's DCP decode runs FlashMLA's fp8 decode kernel (base e)
++    return attention_backend in {"flashmla", "cutedsl_mla", "dsa", "nsa"}
+ 
+ 
+ if _is_cuda:
+diff --git a/test/numinous/test_dcp_topk.py b/test/numinous/test_dcp_topk.py
+index 88d6c5707..4a2816d20 100644
+--- a/test/numinous/test_dcp_topk.py
++++ b/test/numinous/test_dcp_topk.py
+@@ -58,3 +58,11 @@ def test_short_context_fewer_than_k_tokens():
+     assert total == B * T                     # every token selected, none duplicated
+     for r in range(S):
+         assert owned[r].shape == (B, k)       # kernels see a fixed width with -1 padding
++
++
++def test_owned_local_slots_compacts_and_counts():
++    from sglang.srt.layers.attention.dsa.dcp_topk import owned_local_slots
++    slots = torch.tensor([[16, 9, -1, 24, 3, 8], [1, 2, 3, 4, 5, 6]], dtype=torch.int32)
++    local, counts = owned_local_slots(slots, 8, 0)
++    assert local.tolist()[0] == [2, 3, 1, -1, -1, -1] and counts.tolist() == [3, 0]
++    assert local.dtype == torch.int32 and counts.dtype == torch.int32
+-- 
+2.50.1 (Apple Git-155)
+

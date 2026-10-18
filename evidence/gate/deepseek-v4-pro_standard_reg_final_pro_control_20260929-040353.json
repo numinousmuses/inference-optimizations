@@ -1,0 +1,241 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "final_pro_control",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion",
+   "--num-continuous-decode-steps",
+   "1"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/dp_extend_cap_hooks.py": "!run",
+   "operations/patches/pro_small_kernel_hooks.py": "!run",
+   "operations/patches/spec_hooks.py": "!run pro_attn",
+   "operations/patches/trtllm_attn_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_DP_EXTEND_CAP": "0",
+   "NUMINOUS_NORM_QUANT": "0",
+   "NUMINOUS_FP8_LM_HEAD": "0",
+   "NUMINOUS_DSV4_UNIFORM_POOL_BYTES": "0"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20260929-011056",
+  "_acc_control": "final_pro_control"
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--chunked-prefill-size",
+  "32768",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--num-continuous-decode-steps",
+  "1"
+ ],
+ "ladder": [
+  64,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_46k_t8_420.json",
+ "started": "2026-09-29T01:12:49Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 41.73,
+   "warm_agg_out_tok_s": 1464.1,
+   "steady_agg_out_tok_s": 1797.6,
+   "ttft_p90_s": 4.23,
+   "ttft_p99_s": 6.48,
+   "ttft_max_s": 7.93,
+   "turn_wall_p50_s": 6.81,
+   "turn_wall_p90_s": 12.59,
+   "turn_wall_p99_s": 16.07,
+   "tail_last10pct_s": 10.3,
+   "warm_session_rate_sum": 1999.2,
+   "warm_ttft_p50_s": 1.38,
+   "hit_rate": 0.9372,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 230.4,
+   "accept_len": 4.27
+  },
+  {
+   "repeat": 0,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 26.33,
+   "warm_agg_out_tok_s": 2009.3,
+   "steady_agg_out_tok_s": 2501.5,
+   "ttft_p90_s": 4.67,
+   "ttft_p99_s": 8.5,
+   "ttft_max_s": 11.63,
+   "turn_wall_p50_s": 10.81,
+   "turn_wall_p90_s": 19.6,
+   "turn_wall_p99_s": 25.69,
+   "tail_last10pct_s": 16.9,
+   "warm_session_rate_sum": 2783.4,
+   "warm_ttft_p50_s": 1.8,
+   "hit_rate": 0.9386,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 252.3,
+   "accept_len": 4.35
+  },
+  {
+   "repeat": 1,
+   "sessions": 64,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 42.0,
+   "warm_agg_out_tok_s": 1350.8,
+   "steady_agg_out_tok_s": 1783.3,
+   "ttft_p90_s": 3.73,
+   "ttft_p99_s": 7.39,
+   "ttft_max_s": 9.12,
+   "turn_wall_p50_s": 6.63,
+   "turn_wall_p90_s": 12.19,
+   "turn_wall_p99_s": 17.27,
+   "tail_last10pct_s": 14.1,
+   "warm_session_rate_sum": 1980.7,
+   "warm_ttft_p50_s": 1.38,
+   "hit_rate": 0.9372,
+   "mean_prompt_tokens": 63241,
+   "mean_out_tokens": 228.5,
+   "accept_len": 4.24
+  },
+  {
+   "repeat": 1,
+   "sessions": 128,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 26.03,
+   "warm_agg_out_tok_s": 2027.3,
+   "steady_agg_out_tok_s": 2477.2,
+   "ttft_p90_s": 4.62,
+   "ttft_p99_s": 8.85,
+   "ttft_max_s": 13.25,
+   "turn_wall_p50_s": 9.82,
+   "turn_wall_p90_s": 19.63,
+   "turn_wall_p99_s": 25.12,
+   "tail_last10pct_s": 16.4,
+   "warm_session_rate_sum": 2801.7,
+   "warm_ttft_p50_s": 1.74,
+   "hit_rate": 0.9386,
+   "mean_prompt_tokens": 63778,
+   "mean_out_tokens": 249.4,
+   "accept_len": 4.35
+  }
+ ],
+ "booted": true,
+ "boot_min": 19.1,
+ "kv_pool_tokens": [
+  1412096
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-25892dcc-783c-43e6-8973-18a35bfd207c",
+   "GPU-90d10931-23a8-8131-d1dc-8a2818d2017e",
+   "GPU-68d126af-272b-c453-0bbd-633d6c896e63",
+   "GPU-23ffef5f-3120-3e34-65d6-f0f32d98993c",
+   "GPU-aedfa0c3-e239-cc58-a779-4c2ada5f3850",
+   "GPU-9e3faff0-955e-92db-6ef1-bee52debc3b2",
+   "GPU-c8e5c25b-c9b7-0249-dab7-f5591c62064f",
+   "GPU-a586f83a-d4b8-d789-76a9-9521883f8c97"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/deepseek-v4-pro_standard_20260929-011056/accuracy_final_pro_control.json",
+  "seconds": 81.6,
+  "prompts_source": "sessions:real_sessions_dsv4_46k_t8_420.json",
+  "gsm8k_acc": 0.975
+ },
+ "sessions_dropped_oversize": 14,
+ "dp_peak_running": {
+  "0": 23,
+  "1": 20,
+  "2": 24,
+  "3": 20,
+  "4": 24,
+  "5": 21,
+  "6": 22,
+  "7": 21
+ },
+ "numinous_log": [
+  "[2026-09-29 01:31:52 DP4 TP4 EP4] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-29 01:32:42 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [4051, 4096, 4096, 4096, 4096, 4096, 4096, 4096], rank rows 4051 -> 4091"
+ ],
+ "spec_acceptance": {
+  "samples": 408,
+  "accept_len_mean": 4.342,
+  "accept_len_p10": 3.84,
+  "accept_len_p50": 4.36,
+  "accept_len_p90": 4.81,
+  "accept_rate_mean": 0.669
+ },
+ "probes": {
+  "score": "6/6",
+  "per_probe": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "misses": []
+ }
+}

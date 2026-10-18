@@ -1,0 +1,177 @@
+{
+ "cell": "qwen3.6-35b-a3b/fast",
+ "arm": "v20_stock_q36",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [],
+  "flags_remove": [
+   "--moe-runner-backend"
+  ],
+  "flags_add": [
+   "--moe-runner-backend",
+   "marlin"
+  ],
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false
+ },
+ "config_digest": "feece2c633aff59f",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--kv-cache-dtype",
+  "fp8_e4m3",
+  "--mem-fraction-static",
+  "0.85",
+  "--attention-backend",
+  "flashinfer",
+  "--chunked-prefill-size",
+  "2048",
+  "--reasoning-parser",
+  "qwen3",
+  "--tool-call-parser",
+  "qwen3_coder",
+  "--speculative-algorithm",
+  "EAGLE",
+  "--speculative-num-steps",
+  "3",
+  "--speculative-eagle-topk",
+  "1",
+  "--speculative-num-draft-tokens",
+  "4",
+  "--enable-linear-replayssm-spec",
+  "--max-mamba-cache-size",
+  "512",
+  "--max-running-requests",
+  "96",
+  "--moe-runner-backend",
+  "marlin"
+ ],
+ "ladder": [
+  4,
+  8
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_240.json",
+ "started": "2026-09-28T05:10:48Z",
+ "runs": [
+  {
+   "repeat": 0,
+   "sessions": 4,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 107.69,
+   "warm_agg_out_tok_s": 219.9,
+   "steady_agg_out_tok_s": 354.9,
+   "ttft_p90_s": 1.61,
+   "ttft_p99_s": 1.61,
+   "ttft_max_s": 1.61,
+   "turn_wall_p50_s": 4.71,
+   "turn_wall_p90_s": 6.82,
+   "turn_wall_p99_s": 6.82,
+   "tail_last10pct_s": 1.0,
+   "warm_session_rate_sum": 325.8,
+   "warm_ttft_p50_s": 0.87,
+   "hit_rate": 0.9451,
+   "mean_prompt_tokens": 97212,
+   "mean_out_tokens": 328.5,
+   "accept_len": 2.95
+  },
+  {
+   "repeat": 0,
+   "sessions": 8,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 94.36,
+   "warm_agg_out_tok_s": 246.3,
+   "steady_agg_out_tok_s": 449.7,
+   "ttft_p90_s": 2.05,
+   "ttft_p99_s": 5.14,
+   "ttft_max_s": 5.14,
+   "turn_wall_p50_s": 4.63,
+   "turn_wall_p90_s": 7.97,
+   "turn_wall_p99_s": 13.6,
+   "tail_last10pct_s": 1.0,
+   "warm_session_rate_sum": 544.4,
+   "warm_ttft_p50_s": 0.56,
+   "hit_rate": 0.954,
+   "mean_prompt_tokens": 103758,
+   "mean_out_tokens": 278.3,
+   "accept_len": 3.16
+  },
+  {
+   "repeat": 1,
+   "sessions": 4,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 102.33,
+   "warm_agg_out_tok_s": 264.4,
+   "steady_agg_out_tok_s": 330.6,
+   "ttft_p90_s": 1.61,
+   "ttft_p99_s": 1.61,
+   "ttft_max_s": 1.61,
+   "turn_wall_p50_s": 4.84,
+   "turn_wall_p90_s": 6.62,
+   "turn_wall_p99_s": 6.62,
+   "tail_last10pct_s": 0.3,
+   "warm_session_rate_sum": 323.5,
+   "warm_ttft_p50_s": 0.61,
+   "hit_rate": 0.9452,
+   "mean_prompt_tokens": 97212,
+   "mean_out_tokens": 343.3,
+   "accept_len": 3.23
+  },
+  {
+   "repeat": 1,
+   "sessions": 8,
+   "stagger_s": 0.0,
+   "warm_per_user_tok_s": 85.69,
+   "warm_agg_out_tok_s": 239.3,
+   "steady_agg_out_tok_s": 437.3,
+   "ttft_p90_s": 2.33,
+   "ttft_p99_s": 5.12,
+   "ttft_max_s": 5.12,
+   "turn_wall_p50_s": 5.91,
+   "turn_wall_p90_s": 7.77,
+   "turn_wall_p99_s": 9.71,
+   "tail_last10pct_s": 1.4,
+   "warm_session_rate_sum": 559.8,
+   "warm_ttft_p50_s": 0.51,
+   "hit_rate": 0.954,
+   "mean_prompt_tokens": 103758,
+   "mean_out_tokens": 270.8,
+   "accept_len": 3.09
+  }
+ ],
+ "booted": true,
+ "boot_min": 9.4,
+ "kv_pool_tokens": [
+  2353671
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-0c414ebf-aa40-3e89-4690-8751ede32f6a"
+  ]
+ },
+ "sessions_dropped_oversize": 1,
+ "numinous_log": [],
+ "probes": {
+  "score": "5/6",
+  "per_probe": [
+   1,
+   1,
+   0,
+   1,
+   1,
+   1
+  ],
+  "misses": [
+   {
+    "probe": 2,
+    "expect": "The foundry poured 950 tonnes of grey iron in the second quarter and 484 tonnes in the third.",
+    "said": "Here's a thinking process:\n\n1.  **Analyze User Input:**\n   - The user provides a long list of 707 numbered sentences.\n   - The question at the end asks: \"Repeat sentence 676 exactly, then state every number in it as a comma-separated list.\"\n\n2.  **Locate Sentence 676:**\n   - I need to scan the provi"
+   }
+  ]
+ }
+}

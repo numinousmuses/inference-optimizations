@@ -1,0 +1,189 @@
+{
+ "cell": "deepseek-v4-pro/standard",
+ "arm": "final_pro_kv4",
+ "delta": {
+  "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+  "patches": [
+   {
+    "series": "sglang-v0.5.20",
+    "ref": "d8a8f72faf988705df5130822a52711ae1091a87",
+    "files": [
+     "0001-scheduler-make-num-continuous-decode-steps-real.-Aft.patch",
+     "0002-decode-burst-never-hold-a-request-mid-chunked-prefil.patch",
+     "0003-decode-burst-TP-only.-Under-DP-attention-the-prefill.patch",
+     "0004-decode-burst-under-DP-attention-the-streak-joins-the.patch",
+     "0005-decode-burst-under-DP-hold-only-while-the-busiest-ra.patch"
+    ]
+   }
+  ],
+  "flags_remove": [
+   "--moe-runner-backend",
+   "--chunked-prefill-size"
+  ],
+  "flags_add": [
+   "--ep-size",
+   "8",
+   "--moe-a2a-backend",
+   "megamoe",
+   "--enable-w4a4-mxfp4-megamoe",
+   "--disable-shared-experts-fusion",
+   "--chunked-prefill-size",
+   "65536",
+   "--num-continuous-decode-steps",
+   "8"
+  ],
+  "overlay": {
+   "operations/patches/deepgemm_megamoe_hooks.py": "!run",
+   "operations/patches/dp_extend_cap_hooks.py": "!run",
+   "operations/patches/pro_small_kernel_hooks.py": "!run",
+   "operations/patches/spec_hooks.py": "!run pro_attn",
+   "operations/patches/trtllm_attn_hooks.py": "!run",
+   "operations/patches/kv4pro_hooks.py": "!run"
+  },
+  "env": {
+   "SGLANG_OPT_DEEPGEMM_MEGA_MOE_NUM_MAX_TOKENS_PER_RANK": "8320",
+   "NUMINOUS_MEGAMOE_BALANCE": "1",
+   "NUMINOUS_DP_EXTEND_CAP": "0",
+   "NUMINOUS_NORM_QUANT": "1",
+   "NUMINOUS_FP8_LM_HEAD": "1",
+   "NUMINOUS_DSV4_UNIFORM_POOL_BYTES": "1",
+   "SGLANG_DECODE_BURST_QUEUE_CAP": "2",
+   "NUMINOUS_KV4PRO": "all",
+   "SGLANG_OPT_FLASHMLA_SPARSE_PREFILL": "1",
+   "SGLANG_DSV4_COMPRESS_STATE_DTYPE": "bf16"
+  },
+  "_same_sessions": false,
+  "_probe_repeats": 1,
+  "_monitor": false,
+  "_max_chars": 600000,
+  "_gpu_label": "reg",
+  "_stagger_s": 0.0,
+  "_nsys": false,
+  "_acc_dir": "/cache/accuracy/deepseek-v4-pro_standard_20260929-033023",
+  "_acc_control": "final_pro_notrtllm"
+ },
+ "config_digest": "5cced4ae0e0d1c76",
+ "image": "lmsysorg/sglang@sha256:06e4f2ed21afde4ff513cda65070124e727ba23ccaeff7712b8c40e1097d611f",
+ "flags": [
+  "--trust-remote-code",
+  "--tp",
+  "8",
+  "--dp",
+  "8",
+  "--enable-dp-attention",
+  "--enable-dp-lm-head",
+  "--enable-dp-attention-local-control-broadcast",
+  "--speculative-algorithm",
+  "DSPARK",
+  "--enable-prefill-delayer",
+  "--disable-flashinfer-autotune",
+  "--swa-full-tokens-ratio",
+  "0.1",
+  "--mem-fraction-static",
+  "0.90",
+  "--max-running-requests",
+  "512",
+  "--ep-size",
+  "8",
+  "--moe-a2a-backend",
+  "megamoe",
+  "--enable-w4a4-mxfp4-megamoe",
+  "--disable-shared-experts-fusion",
+  "--chunked-prefill-size",
+  "65536",
+  "--num-continuous-decode-steps",
+  "8"
+ ],
+ "ladder": [
+  64,
+  96,
+  128
+ ],
+ "repeats": 1,
+ "sessions_file": "data/real_sessions_dsv4_83k.json",
+ "started": "2026-09-29T03:32:08Z",
+ "runs": [],
+ "booted": true,
+ "boot_min": 20.3,
+ "kv_pool_tokens": [
+  2593024
+ ],
+ "node": {
+  "host": "modal",
+  "gpus": [
+   "GPU-35df99ef-e84f-a206-1048-7d13f3e6c8cd",
+   "GPU-19492009-f479-4088-c9e3-6faa87e9c950",
+   "GPU-2da276ad-081c-920b-5c01-0b40ccdb30f3",
+   "GPU-053bbe38-ec86-90e0-0502-8d383ff7bcd4",
+   "GPU-019f7b1c-0b36-0da9-da61-191a8a8a8968",
+   "GPU-37059716-e0a0-e9f7-e50c-77b61a11e667",
+   "GPU-bd51d0ed-74d3-f70e-bf3e-1e2620a98ebb",
+   "GPU-ab659fe9-0830-ee7e-e6d9-7e802f8b444e"
+  ]
+ },
+ "accuracy": {
+  "artifact": "/cache/accuracy/deepseek-v4-pro_standard_20260929-033023/accuracy_final_pro_kv4.json",
+  "seconds": 93.4,
+  "prompts_source": "sessions:real_sessions_dsv4_83k.json",
+  "gsm8k_acc": 0.98
+ },
+ "sessions_dropped_oversize": 0,
+ "error": "ClientPayloadError: Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+ "root_cause": [
+  "...",
+  "[2026-09-29 04:11:15 DP6 TP6 EP6] Scheduler hit an exception: Traceback (most recent call last):",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 5891, in run_scheduler_process",
+  "    scheduler.run_event_loop()",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 1899, in run_event_loop",
+  "    dispatch_event_loop(self)",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 5737, in dispatch_event_loop",
+  "    scheduler.event_loop_overlap()",
+  "  File \"/opt/sglang/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context",
+  "    return func(*args, **kwargs)",
+  "           ^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 1997, in event_loop_overlap",
+  "    batch_result = self.run_batch(batch)",
+  "                   ^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/observability/scheduler_stage_metrics.py\", line 155, in wrapper",
+  "    return profiled_func(self, *args, **kwargs)",
+  "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/utils/nvtx_utils.py\", line 109, in wrapper",
+  "    return func(*args, **kwargs)",
+  "           ^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/managers/scheduler.py\", line 4352, in run_batch",
+  "    batch_result = self.model_worker.forward_batch_generation(",
+  "                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "  File \"/sgl-workspace/sglang/python/sglang/srt/speculative/dspark_components/dspark_worker_v2.py\", line 519, in forward_batch_generation",
+  "    return self._forward_prefill(batch, on_publish)",
+  "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+  "... error lines:",
+  "tvm.error.InternalError: CUDA out of memory. Tried to allocate 2.23 GiB. GPU 6 has a total capacity of 178.35 GiB of which 2.19 GiB is free. Process 1 has 176.15 GiB memory in use. Of the allocated memory 161.65 GiB is allocated by PyTorch, with 631.64 MiB allocated in private pools (e.g., CUDA Graphs), and 5.52 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+  "frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7ec22cb63bfd in /opt/sglang/lib/python3.12/site-packages/torch/lib/libc10.so)",
+  "frame #1: c10::OutOfMemoryError::OutOfMemoryError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x7ec22cb64972 in /opt/sglang/lib/python3.12/site-packages/torch/lib/libc10.so)",
+  "... tail:",
+  "frame #60: PyRun_SimpleStringFlags + 0x3e (0x6b40de in sglang::scheduler_DP6_TP6_EP6)",
+  "frame #61: Py_RunMain + 0x481 (0x6bcda1 in sglang::scheduler_DP6_TP6_EP6)",
+  "frame #62: Py_BytesMain + 0x2d (0x6bc7bd in sglang::scheduler_DP6_TP6_EP6)",
+  "[2026-09-29 04:11:16] Subprocess scheduler_0 (pid=14475) crashed with exit code -3. Triggering SIGQUIT for cleanup...",
+  "[2026-09-29 04:11:16] SIGQUIT received. signum=None, frame=None. It usually means one child failed.",
+  "[2026-09-29 04:11:16] Sleeping 5 seconds before crash diagnostics to let GPU activity settle.",
+  "[2026-09-29 04:11:21] No live scheduler processes found; skipping py-spy and CUDA coredump.",
+  "[2026-09-29 04:11:21] kill_process_tree called: parent_pid=14394, include_parent=True, pid=14394"
+ ],
+ "numinous_log": [
+  "[2026-09-29 03:38:06 DP0 TP0 EP0] numinous fp8_lm_head active (head (129280, 7168) quantized to FP8 128x128 UE8M0, DeepGEMM logits)",
+  "[2026-09-29 03:45:43 DP5 TP5 EP5] numinous kv4pro: priced cells swa=320 c4=320 c128=584 B",
+  "[2026-09-29 03:45:43 DP5 TP5 EP5] numinous kv4pro: 4-bit KV cells for swa=True c4=True c128=False",
+  "Capturing batches (bs=20 avail_mem=10.26 GB):  48%|\u2588\u2588\u2588\u2588\u258a     | 13/27 [04:29<00:31,  2.22s/it][2026-09-29 03:50:13 DP4 TP4 EP4] numinous norm_quant active (q_norm + FP8 UE8M0 quant in one kernel, shared by wq_b and indexer wq_b)",
+  "[2026-09-29 03:52:26 DP5 TP5 EP5] numinous_megamoe_balance active: DP token counts [1, 0, 0, 0, 0, 0, 0, 0], rank rows 0 -> 1",
+  "[2026-09-29 03:53:26 DP0 TP0 EP0] numinous_megamoe_balance active: DP token counts [7987, 8192, 8192, 8192, 8192, 8192, 8192, 7986], rank rows 7987 -> 8141"
+ ],
+ "spec_acceptance": {
+  "samples": 90,
+  "accept_len_mean": 4.433,
+  "accept_len_p10": 3.97,
+  "accept_len_p50": 4.48,
+  "accept_len_p90": 4.85,
+  "accept_rate_mean": 0.686
+ }
+}

@@ -1,0 +1,6 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.8-27b_standard_20260929-035931",
+ "control": "q38kv4_bf16kv_fixed",
+ "control_found": true,
+ "arms": {}
+}

@@ -1,0 +1,11 @@
+# pdmux config for GLM-5.3 on 8 x H200, M layout (DP8 attention + EP8 MoE), amdglm (findings 10, arm GX0).
+# Three stream groups (glm_pdmux_dp_hooks / numinous_pdmux_dp.choose_stream_idx, the stock rule on GLOBAL state):
+#   0 = prefill only (all SMs), 1 = prefill + decode split, 2 = decode only (all SMs).
+# Group 1's split is the stock divide_sm default for 132 SMs on sm_90 (prefill 72 / decode 60). It is not
+# hard-coded, so the file stays SKU-neutral. Fewer groups = fewer per-group decode CUDA-graph sets and KV4 graph
+# scratch copies (rtxv41 item 8).
+sm_group_num: 3
+# layers per split = budget // (global max extend tokens per rank): 65536 // 2048 = 32 of 78 layers per iteration.
+# The P stream runs asynchronously; this only sets how many iterations the CPU takes to enqueue one prefill pass.
+split_forward_token_budget: 65536
+decode_bs_divisor: 36

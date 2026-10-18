@@ -1,0 +1,163 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260928-224112",
+ "control": "b200rtx_q36_stock",
+ "control_found": true,
+ "arms": {
+  "b200rtx_q36_stock_noise": {
+   "control": "b200rtx_q36_stock",
+   "arm": "b200rtx_q36_stock_noise",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51186,
+     "mismatched_prompts": [],
+     "kl_mean": 0.07593412849969995,
+     "kl_p99": 2.505984462742937,
+     "kl_max": 14.611662408394976,
+     "top1_agree": 0.9559449849568241,
+     "dlp_mean": 0.14354785732426836,
+     "dlp_p99": 2.773731650000001,
+     "dlp_max": 19.010730000000002
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.855,
+     "acc_arm": 0.865,
+     "drop_pts": -1.0000000000000009,
+     "control_only_correct": 5,
+     "arm_only_correct": 7,
+     "answer_changed": 28,
+     "mcnemar_p_arm_worse": 0.80615234375
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": true,
+     "kl_p99": true,
+     "top1_agree": true,
+     "dlp_p99": true,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.22780238549909987,
+     "kl_p99_max": 7.517953388228811,
+     "top1_agree_min": 0.8678349548704724,
+     "dlp_p99_max": 8.321194950000002,
+     "em_drop_max_pts": 3.0000000000000027,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": true,
+    "noise_given": true,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "b200rtx_q36_mtp4_cutedsl": {
+   "control": "b200rtx_q36_stock",
+   "arm": "b200rtx_q36_mtp4_cutedsl",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51186,
+     "mismatched_prompts": [],
+     "kl_mean": 0.07732617628818036,
+     "kl_p99": 2.633451918136596,
+     "kl_max": 13.586239156227526,
+     "top1_agree": 0.954948618762943,
+     "dlp_mean": 0.1486616249169695,
+     "dlp_p99": 2.803843500000002,
+     "dlp_max": 22.607264999999998
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.855,
+     "acc_arm": 0.88,
+     "drop_pts": -2.500000000000002,
+     "control_only_correct": 4,
+     "arm_only_correct": 9,
+     "answer_changed": 26,
+     "mcnemar_p_arm_worse": 0.953857421875
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": true,
+     "kl_p99": true,
+     "top1_agree": true,
+     "dlp_p99": true,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.22780238549909987,
+     "kl_p99_max": 7.517953388228811,
+     "top1_agree_min": 0.8678349548704724,
+     "dlp_p99_max": 8.321194950000002,
+     "em_drop_max_pts": 3.0000000000000027,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": true,
+    "noise_given": true,
+    "tf_skipped": false,
+    "note": null
+   }
+  },
+  "b200rtx_q36_fp8_mtp4": {
+   "control": "b200rtx_q36_stock",
+   "arm": "b200rtx_q36_fp8_mtp4",
+   "metrics": {
+    "tf": {
+     "prompts": 200,
+     "positions": 51186,
+     "mismatched_prompts": [],
+     "kl_mean": 0.12467199228827675,
+     "kl_p99": 3.90849836533036,
+     "kl_max": 21.16461041141693,
+     "top1_agree": 0.9283202438166687,
+     "dlp_mean": 0.23537671863400147,
+     "dlp_p99": 3.9681102000000013,
+     "dlp_max": 27.841649
+    },
+    "em": {
+     "items": 200,
+     "acc_control": 0.855,
+     "acc_arm": 0.895,
+     "drop_pts": -4.0000000000000036,
+     "control_only_correct": 5,
+     "arm_only_correct": 13,
+     "answer_changed": 27,
+     "mcnemar_p_arm_worse": 0.98455810546875
+    }
+   },
+   "verdict": {
+    "pass": true,
+    "checks": {
+     "inputs_identical": true,
+     "kl_mean": true,
+     "kl_p99": true,
+     "top1_agree": true,
+     "dlp_p99": true,
+     "em_paired": true
+    },
+    "thresholds": {
+     "kl_mean_max": 0.22780238549909987,
+     "kl_p99_max": 7.517953388228811,
+     "top1_agree_min": 0.8678349548704724,
+     "dlp_p99_max": 8.321194950000002,
+     "em_drop_max_pts": 3.0000000000000027,
+     "em_p_max": 0.1,
+     "em_drop_hard_pts": 5.0
+    },
+    "within_noise": false,
+    "noise_given": true,
+    "tf_skipped": false,
+    "note": null
+   }
+  }
+ }
+}

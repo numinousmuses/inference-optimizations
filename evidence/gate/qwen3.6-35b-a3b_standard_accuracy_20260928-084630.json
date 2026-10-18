@@ -1,0 +1,37 @@
+{
+ "acc_dir": "/cache/accuracy/qwen3.6-35b-a3b_standard_20260928-081104",
+ "control": "v20_stock_q36",
+ "control_found": true,
+ "arms": {
+  "qwen36_moe_trtllm": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_moe_auto": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_standard_trtllm_v1": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_dspark_koopah": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_dspark_redhat": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  },
+  "qwen36_dflash_modal": {
+   "error": "missing record",
+   "control": true,
+   "arm": false
+  }
+ }
+}
