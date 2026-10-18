@@ -1,4 +1,4 @@
-# Inference optimizations
+# 60+ inference optimizations & kernels
 
 Kernels, engine patches and tooling I built to serve frontier open models on six kinds of GPU. The work sits on top of [SGLang](https://github.com/sgl-project/sglang) and covers what SGLang and its kernel libraries don't: 4-bit KV caches for models that had none, sparse attention on chips the vendors never targeted, a new context-parallel mode, and 25+ upstream bugs found along the way.
 
